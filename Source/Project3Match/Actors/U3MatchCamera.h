@@ -24,16 +24,17 @@ public:
 		void CheckViewport();
 	UFUNCTION(BlueprintCallable, Category = U3MatchCameraHelper)
 		FVector MoveCameraZ();
+	FORCEINLINE void SetCameraSet(bool bIsSet) { this->bIsCameraSet = bIsSet; }
 
 private:
 	UPROPERTY(EditAnywhere, Meta = (AllowPrivateAccess = true), Category = U3MatchCameraVariable)
-		class UGameInstance* GameInstance;
+		class UGameInstance* GlobalGameInstance;
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Meta = (AllowPrivateAccess = true), Category = U3MatchCameraVariable)
 		class APaperSpriteActor* GridBorder;
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Meta = (AllowPrivateAccess = true), Category = U3MatchCameraVariable)
 		bool bIsCameraSet = false;
 
-	FVector2D DefaultFit = FVector2D(640, 1136);
+	FVector2D DefaultFit;
 	FVector2D StoreSize;
-	float DesiredSize = 256;
+	float DesiredSize;
 };
