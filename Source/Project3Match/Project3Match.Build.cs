@@ -1,4 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+#define PAPER2D_API
 
 using UnrealBuildTool;
 
@@ -8,13 +9,12 @@ public class Project3Match : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
-
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
-
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Paper2D" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "Paper2D" });
+        PrivateIncludePathModuleNames.AddRange(new string[] { @"Paper2D" });
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
+
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
