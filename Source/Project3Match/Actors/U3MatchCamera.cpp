@@ -1,30 +1,52 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
+
 #include "U3MatchCamera.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/GameInstance.h"
 #include "Math/UnrealMathUtility.h"
+#include "../UObjects/GlobalGameInstance.h"
+
+
 #include "../../../../../../Engine/Plugins/2D/Paper2D/Source/Paper2D/Classes/PaperSpriteActor.h"
 
 AU3MatchCamera::AU3MatchCamera():Super(FObjectInitializer()),
 DefaultFit(FVector2D(640, 1136)), DesiredSize(256)
 {
 	PrimaryActorTick.bCanEverTick = false;
+	using HelperClasses::FDoOnceObject;
+	DoOnce = new FDoOnceObject();
 }
 
 void AU3MatchCamera::BeginPlay()
 {
 	Super::BeginPlay();
-	//APaperSpriteActor* Actor = nullptr;
+}
+
+void AU3MatchCamera::BeginDestroy()
+{
+	Super::BeginDestroy();
+	
+	if(DoOnce!= nullptr)
+		delete DoOnce;
+}
+
+FVector2D GetViewport(UWorld* World)
+{
+	if (World == nullptr)
+		return FVector2D(1, 1);
+
+	FVector2D Viewport;
+	UGameViewportClient* GameViewport = World->GetGameViewport();
+	GameViewport->GetViewportSize(Viewport);
+	return Viewport;
 }
 
 void AU3MatchCamera::UpdateCamera()
 {
-	FVector2D Viewport(0, 0);
-	if(UGameViewportClient* ViewportClient = GetWorld()->GetGameViewport())
-		ViewportClient->GetViewportSize(Viewport);
-
+	FVector2D Viewport = GetViewport(GetWorld());
+	
 	if (Viewport.X > 0)
 	{
 		double ViewPortRatio = Viewport.Y / Viewport.X;
@@ -63,16 +85,26 @@ void AU3MatchCamera::UpdateCamera()
 void AU3MatchCamera::CheckViewport()
 {
 	if (::IsValid(GlobalGameInstance))
-	{
+		GlobalGameInstance = AActor::GetGameInstance();
 
-	}
-	else
+	FVector2D Viewport = GetViewport(GetWorld());
+	if (Viewport.X != StoreSize.X || Viewport.Y != StoreSize.Y)
 	{
+		StoreSize = Viewport;
+		UGlobalGameInstance* GameInstance = static_cast<UGlobalGameInstance*>(GlobalGameInstance);
+		GameInstance->SetCameraResize(StoreSize);
 
+		if (DoOnce)
+		{
+			UpdateCamera();
+			
+		}
 	}
+
 }
 
 FVector AU3MatchCamera::MoveCameraZ()
 {
+	//APaperSpriteActor* Actor = nullptr;
 	return FVector();
 }
