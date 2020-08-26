@@ -11,7 +11,7 @@ class PROJECT3MATCH_API ATile : public APaperSpriteActor
 
 public:
 	UFUNCTION()
-		void SetTileMaterial(class UMaterialInstanceConstant* TileMaterial);
+		virtual void SetTileMaterial(class UMaterialInstanceConstant* TileMaterial);
 
 	void SetGridAddress(int32 NewAddressLocation);
 	inline int32 GetTileTypeID()const { return TileTypeID; }
