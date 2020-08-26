@@ -1,15 +1,20 @@
 
 #pragma once
+
+//#include "CoreMinimal.h"
 #include "Templates/SubclassOf.h"
+#include "UObject/ObjectMacros.h"
+
 #include "Math/Color.h"
-//#include "Materials/MaterialInstanceConstant.h"
 #include "TileStructure.h"
+#include "GridStructure.generated.h"
 
 USTRUCT(BlueprintType)
 struct FTileType
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_USTRUCT_BODY()
 
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UMaterialInstanceConstant* TileMaterial = nullptr;
 

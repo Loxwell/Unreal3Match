@@ -1,13 +1,14 @@
 
 #pragma once
+//#include "CoreMinimal.h"
 #include "HAL/Platform.h"
 #include "UObject/ObjectMacros.h"
-
+#include "TileStructure.generated.h"
 
 USTRUCT(BlueprintType)
 struct FTileAbilities
 {
-	GENERATED_USTRUCT_BODY();
+	GENERATED_USTRUCT_BODY()
 
 public:
 	FTileAbilities()

@@ -21,7 +21,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Initialization)
 		void InitGrid();
 
-	UFUNCTION(BlueprintImplementableEvent, meta = (ExpandEnumAsExecs = MoveType), Category = Tile)
+	UFUNCTION(BlueprintImplementableEvent, meta = (ExpandEnumAsExecs = "MoveType"), Category = Tile)
 		void OnMoveMade(ETileMoveType::Type MoveType);
 
 	UFUNCTION(BlueprintCallable, Category = Audio)
@@ -71,7 +71,7 @@ public:
 	void OnSwapDisplayFinished(ATile* InTile);
 
 	void RespawnTiles();
-	void SwapTiles(ATile* From, ATile* To, bool bRepositionTileActor = false);
+	void SwapTiles(ATile* From, ATile* To, bool bRepositionTileActors = false);
 
 	/**
 	* 해당 타일 위치로 이동 할 수 있는지 사전 시험
@@ -125,7 +125,7 @@ public:
 
 	/** Grid 열*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 GirdHeight;
+		int32 GridHeight;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tile)

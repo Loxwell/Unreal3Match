@@ -15,10 +15,10 @@ AGrid::AGrid(const FObjectInitializer& ObjectInitializer)
 
 void AGrid::InitGrid()
 {
-	GameTiles.Empty(GridWitdh * GridHeight);
+	GameTiles.Empty(GridWidth * GridHeight);
 }
 
-void AGrid::OnMoveMade(ETileMoveType::Type  MoveType)
+void AGrid::OnMoveMade(ETileMoveType::Type MoveType)
 {
 
 }
@@ -35,7 +35,7 @@ FVector AGrid::GetLocationFromGridAddress(int32 GridAddress) const
 
 FVector AGrid::GetLocationFromGridAddressWithOffset(int32 GridAddress, int32 XOffsetInTiles, int32 YOffsetInTiles) const
 {
-
+	return FVector();
 }
 
 bool AGrid::GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, int32 YOffset, int32& ReturnGridAddress) const
@@ -90,29 +90,29 @@ void AGrid::RespawnTiles()
 
 }
 
-void AGrid::SwapTiles(ATile* From, ATile* To, bool bRepositionTileActor = false)
+void AGrid::SwapTiles(ATile* From, ATile* To, bool bRepositionTileActors)
 {
 
 }
 
 bool AGrid::IsMovingLegal(ATile* Form, ATile* To)
 {
-
+	return false;
 }
 
 TArray<ATile*> AGrid::GetExploionList(ATile* Tile) const
 {
-
+	return TArray<ATile*>();
 }
 
-TArray<ATile*> AGrid::FindNeighbors(ATile* StartingTile, bool bMustMatchID = true, int32 RunLegnth = -1) const
+TArray<ATile*> AGrid::FindNeighbors(ATile* StartingTile, bool bMustMatchID, int32 RunLegnth) const
 {
-
+	return TArray<ATile*>();
 }
 
 TArray<ATile*> AGrid::FindTilesOfType(int32 TileTypeID)
 {
-
+	return TArray<ATile*>();
 }
 
 void AGrid::ExcuteMatch(const TArray<ATile*>& MatchingTiles)
