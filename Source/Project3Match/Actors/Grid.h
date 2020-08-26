@@ -110,7 +110,7 @@ public:
 		TArray<class ATile*> GameTiles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<Grid::FTileType> TileLibrary;
+		TArray<FTileType> TileLibrary;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector2D TileSize;
