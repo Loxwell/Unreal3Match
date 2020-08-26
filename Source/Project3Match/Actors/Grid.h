@@ -21,6 +21,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Initialization)
 		void InitGrid();
 
+	/**블루 프린트 용 순수 가상 함수*/
 	UFUNCTION(BlueprintImplementableEvent, meta = (ExpandEnumAsExecs = "MoveType"), Category = Tile)
 		void OnMoveMade(ETileMoveType::Type MoveType);
 
@@ -45,8 +46,8 @@ public:
 	ATile* CreateTile(TSubclassOf<class ATile> UClassOfTile, class UMaterialInstanceConstant* TileMaterial,
 		FVector SpawnLocation, int32 SpawnGridAddress, int32 TileTypeID);
 
-	/** 타일의 Probability 속성을 기반으로 Grid Library에서 랜덤으로 하나 뽑음, */
-	int32 SelectTileFromLibrary();
+	/* 타일의 Probability 속성을 기반으로 Grid Library에서 랜덤으로 하나 뽑음*/
+	int32 SelectTileIDFromLibrary();
 
 	ATile* GetTileFromGridAddress(int32 GridAddress) const;
 
@@ -115,7 +116,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector2D TileSize;
 
-	/** 행 기준 최소 맞춰야 할 타일 수*/
+	/** 한줄로 일치 하는 타일의 최소수*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
 		int32 MinimumRunLength;
 

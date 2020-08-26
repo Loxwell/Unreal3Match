@@ -27,6 +27,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FTileAbilities Abilities;
 
+	/*È®·ü, °¡´É¼º*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float Probability = 1.f;
 };

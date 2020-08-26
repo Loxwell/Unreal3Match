@@ -16,12 +16,11 @@ class PROJECT3MATCH_API UGlobalGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 public:
-	inline void SetCameraResize(const FVector2D& NewViewport) { StoredCameraViewport = NewViewport; }
-	
+	void SetCameraResize(const FVector2D& NewViewport) { StoredCameraViewport = NewViewport; }
+
+//protected:
+//	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Game")
+//		TSubclassOf<UUserWidget> UIGameScreen;
 private:
-	/*UPROPERTY(EditAnywhere, Meta = (AllowPrivateAccess = true))
-		*/
-	UPROPERTY()
-		TSubclassOf<UUserWidget> UIGameScreen;
 	FVector2D StoredCameraViewport;
 };
