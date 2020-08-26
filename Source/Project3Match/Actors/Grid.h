@@ -15,6 +15,46 @@ UCLASS()
 class PROJECT3MATCH_API AGrid : public AActor
 {
 	GENERATED_BODY()
+
+public:
+	/*
+	@Summary : In Game에서 동적 생성 된 퍼즐 타일
+	*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		TArray<class ATile*> GameTiles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FTileType> TileLibrary;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FVector2D TileSize;
+
+	/** 한줄로 일치 하는 타일의 최소수*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
+		int32 MinimumRunLength;
+
+	/** Grid 행, 타일의 위치를 계산 할 때 사용*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
+		int32 GridWidth;
+
+	/** Grid 열*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
+		int32 GridHeight;
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tile)
+		ATile* CurrentlySelectedTile;
+
+private:
+	TArray<ATile*> LastLegalMatch;
+	TArray<ATile*> FallingTiles;
+	TArray<ATile*> SawppingTiles;
+	TArray<ATile*> TilesToCheck;
+	TArray<ATile*> TilesBeingDestroyed;
+	TMap<class APlayerController*, ETileMoveType::Type> LastMoves;
+	uint32 bPendingSwapMove : 1;
+	uint32 bPendingSwapMoveSuccess : 1;
+
 public:
 	AGrid(const FObjectInitializer& ObjectInitializer);
 
@@ -50,8 +90,9 @@ public:
 	int32 SelectTileIDFromLibrary();
 
 	ATile* GetTileFromGridAddress(int32 GridAddress) const;
-
-	bool AreAddressNeighbors(int32 GridAddress, int32 GridAddressB) const;
+	
+	/** Determine if two grid addresses are valid and adjacent. */
+	bool AreAddressesNeighbors(int32 GridAddressA, int32 GridAddressB) const;
 	
 	/// <summary>
 	/// Moving
@@ -106,41 +147,6 @@ public:
 
 	inline ATile* GetCurrentlySelectedTile()const { return CurrentlySelectedTile; }
 
-public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		TArray<class ATile*> GameTiles;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<FTileType> TileLibrary;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector2D TileSize;
-
-	/** 한줄로 일치 하는 타일의 최소수*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 MinimumRunLength;
-
-	/** Grid 행, 타일의 위치를 계산 할 때 사용*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 GridWidth;
-
-	/** Grid 열*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 GridHeight;
-
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tile)
-		ATile* CurrentlySelectedTile;
-
-private:
-	TArray<ATile*> LastLegalMatch;
-	TArray<ATile*> FallingTiles;
-	TArray<ATile*> SawppingTiles;
-	TArray<ATile*> TilesToCheck;
-	TArray<ATile*> TilesBeingDestroyed;
-	TMap<class APlayerController*, ETileMoveType::Type> LastMoves;
-	uint32 bPendingSwapMove : 1;
-	uint32 bPendingSwapMoveSuccess : 1;
 };
 
 

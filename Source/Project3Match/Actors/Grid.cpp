@@ -2,6 +2,7 @@
 #include "Tile.h"
 #include "../Project3MatchGameModeBase.h"
 #include "Sound/SoundWave.h"
+#include "../MISC/EnumLibrary.h"
 #include "Math/UnrealMathUtility.h"
 
 AGrid::AGrid(const FObjectInitializer& ObjectInitializer)
@@ -100,10 +101,128 @@ int32 AGrid::SelectTileIDFromLibrary()
 {
 	float NormailizingFactor = 0;
 	for (const FTileType& TileBase : TileLibrary)
-	{
 		NormailizingFactor += TileBase.Probability;
+
+	float TestNumber = FMath::FRandRange(0, NormailizingFactor);
+	float CompareTo = 0;
+
+	for (int32 ArrayChecked = 0, TileNum = TileLibrary.Num(); ArrayChecked != TileNum; ++ArrayChecked)
+	{
+		CompareTo += TileLibrary[ArrayChecked].Probability;
+		if (TestNumber <= CompareTo)
+			return ArrayChecked;
 	}
 	return 0;
+}
+
+ATile* AGrid::GetTileFromGridAddress(int32 GridAddress) const
+{
+	if (GameTiles.IsValidIndex(GridAddress))
+		return GameTiles[GridAddress];
+	return nullptr;
+}
+
+FVector AGrid::GetLocationFromGridAddress(int32 GridAddress) const
+{
+	FVector Center = GetActorLocation();
+	// 좌하단
+	FVector OutLocation = FVector(-(GridWidth * 0.5f) * TileSize.X + (TileSize.X * 0.5f), 0.f, -(GridHeight * 0.5f) * TileSize.Y + (TileSize.Y * 0.5f));
+	check(GridWidth > 0);
+	OutLocation.X += TileSize.X * (float)(GridAddress % GridWidth);
+	OutLocation.Y += TileSize.Y * (float)(GridAddress / GridWidth);
+	OutLocation += Center;
+	return OutLocation;
+}
+
+FVector AGrid::GetLocationFromGridAddressWithOffset(int32 GridAddress, int32 XOffsetInTiles, int32 YOffsetInTiles) const
+{
+	FVector OutLocation = GetLocationFromGridAddress(GridAddress);
+	OutLocation.X += TileSize.X * (float)(XOffsetInTiles);
+	OutLocation.Y += TileSize.Y * (float)(YOffsetInTiles);
+	return OutLocation;
+}
+
+/**
+* @param InitialGridAddress : 검색 할 Tile 시작 Index
+*/
+bool AGrid::GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, int32 YOffset, int32& ReturnGridAddress) const
+{
+	int32 NewAxisValue = 0;
+	// 영역 밖 위치로 초기화
+	// 호출 한 곳에서 해당 값 법위 확인
+	ReturnGridAddress = -1;
+
+	// Check for going off the map in the X direction.
+	// X 방향으로 영역을 벗어 나는지 확인
+	check(GridWidth > 0);
+
+	NewAxisValue = (InitialGridAddress % GridWidth) + XOffset;
+	// 0번째 부터 가로 개수 - 1 사이 값
+	if(NewAxisValue != FMath::Clamp(NewAxisValue, 0, (GridWidth - 1)))
+		return false;
+	
+	NewAxisValue = (InitialGridAddress / GridWidth) + YOffset;
+	// 0번째 부터 세로 개수 - 1 사이 값
+	if (NewAxisValue != FMath::Clamp(NewAxisValue, 0, (GridHeight - 1)))
+		return false;
+
+	// GameTiles가 1차 배열 기준 계산 방식
+	// 시작 Index로 부터 가로 XOffset 만큼 우로 이동
+	// XOffset 만큼 이동 한 위치 부터 가로 방향으로 YOffset * GridWidth 만큼 Shift
+	ReturnGridAddress = (InitialGridAddress + XOffset + (YOffset * GridWidth));
+	check(ReturnGridAddress >= 0);
+	check(ReturnGridAddress < (GridWidth * GridHeight));
+
+	return true;
+}
+
+void AGrid::OnTileFinishedFalling(ATile* Tile, int32 LandingGridAddress)
+{
+	int32 ReturnGridAddress = 0;
+
+	// Remove the tile from its original position 
+	// if it's still there (hasn't been replaced by another falling tile).
+	if (GetGridAddressWithOffset(Tile->GetGridAddress(), 0, 0, ReturnGridAddress))
+	{
+		// 해당 Index에는 다른 Tile이 배치 되었는데 참조는 현재 인자값 Tile을 가르킬 경우
+		if (GameTiles[ReturnGridAddress] == Tile)
+			GameTiles[ReturnGridAddress] = nullptr;
+	}
+
+	// Validate new grid address and replace whatever is there.
+	// 유효한 Tile Index 및 해당 Tile 대신 떨어진 Tile로 교체
+	if (GetGridAddressWithOffset(LandingGridAddress, 0, 0, ReturnGridAddress))
+	{
+		GameTiles[ReturnGridAddress] = Tile;
+		Tile->SetGridAddress(ReturnGridAddress);
+		using namespace ETileState;
+		Tile->SetTileState(ETS_NORMAL);
+	}
+
+	FallingTiles.RemoveSingleSwap(Tile);
+	TilesToCheck.Add(Tile);
+
+	/// <summary>
+	/// with all falling tiles. Spawn new ones at the top of each column in the appropriate quantity.
+	/// 타일이 전부 이동이 완료 된 경우, 상단 부터 비어 있는 Column에 새로운 Tile 생성
+	/// </summary>
+	/// <param name="Tile"></param>
+	/// <param name="LandingGridAddress"></param>
+	if (FallingTiles.Num() == 0)
+		RespawnTiles();
+}
+
+bool AGrid::AreAddressesNeighbors(int32 GridAddressA, int32 GridAddressB) const
+{
+	if((FMath::Min(GridAddressA, GridAddressB) >= 0) 
+		&& (FMath::Max(GridAddressA, GridAddressB) < (GridWidth * GridHeight)))
+	{
+		int32 GridAddressOffset = FMath::Abs(GridAddressA - GridAddressB);
+		
+		// 두 Index가 연결 또는 끝과 끝 (0 - Width or Width - 0) 일 경우
+		return ((GridAddressOffset == 1) || (GridAddressOffset == GridWidth));
+	}
+	return false;
 }
 
 void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
@@ -111,40 +230,9 @@ void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
 
 }
 
-FVector AGrid::GetLocationFromGridAddress(int32 GridAddress) const
-{
-	return FVector();
-}
-
-FVector AGrid::GetLocationFromGridAddressWithOffset(int32 GridAddress, int32 XOffsetInTiles, int32 YOffsetInTiles) const
-{
-	return FVector();
-}
-
-bool AGrid::GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, int32 YOffset, int32& ReturnGridAddress) const
-{
-
-	return false;
-}
-
 int32 AGrid::GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType)
 {
 	return 0;
-}
-
-ATile* AGrid::GetTileFromGridAddress(int32 GridAddress) const
-{
-	return nullptr;
-}
-
-bool AGrid::AreAddressNeighbors(int32 GridAddress, int32 GridAddressB) const
-{
-	return false;
-}
-
-void AGrid::OnTileFinishedFalling(ATile* Tile, int32 LandingGridAddress)
-{
-
 }
 
 void AGrid::OnTileFinishedMatching(ATile* InTile)

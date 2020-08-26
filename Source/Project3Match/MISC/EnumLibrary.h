@@ -18,4 +18,13 @@ namespace ETileMoveType
 	};
 }
 
-
+UENUM()
+namespace ETileState
+{
+	enum Type 
+	{
+		ETS_NORMAL,
+		ETS_FALLING,
+		ETS_PENDING_DELETE
+	};
+}
