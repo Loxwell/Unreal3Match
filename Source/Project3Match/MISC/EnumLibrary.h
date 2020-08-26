@@ -1,11 +1,10 @@
-#ifndef __U3MATCH_ENUM_MOVE_TYPE__
-#define __U3MATCH_ENUM_MOVE_TYPE__
+#pragma once
 
 #include "UObject/ObjectMacros.h"
 
+UENUM(BlueprintType)
 namespace ETileMoveType
 {
-	UENUM(BlueprintType)
 	enum EType
 	{
 		MT_NONE,
@@ -18,6 +17,5 @@ namespace ETileMoveType
 		MT_MAX
 	};
 }
-#endif // !__U3MATCH_ENUM_MOVE_TYPE__
 
 

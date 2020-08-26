@@ -1,18 +1,15 @@
-#ifndef __U3MATCH_GRID__
-#define __U3MATCH_GRID__
+#pragma once
 
 #include "GameFramework/Actor.h"
 #include "PaperSprite.h"
+//#include "HAL/Platform.h"
 //#include "Tile.h"
 #include "../MISC/GridStructure.h"
 #include "../MISC/EnumLibrary.h"
 
 #include "Grid.generated.h"
 
-
 class ATile;
-
-using ETileMovingType = ETileMoveType::Type;
 
 UCLASS()
 class PROJECT3MATCH_API AGrid : public AActor
@@ -21,26 +18,26 @@ class PROJECT3MATCH_API AGrid : public AActor
 public:
 	AGrid(const FObjectInitializer& ObjectInitializer);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		TArray<class ATile*> GameTiles;
-	
-	UPROPRTY(EditAnywhere, BlueprintReadWrite)
-		TArray<FTileType> TileLibrary;
+	UFUNCTION(BlueprintCallable, Category = Initialization)
+		void InitGrid();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FVector2D TileSize;
+	UFUNCTION(BlueprintImplementableEvent, meta = (ExpandEnumAsExecs = MoveType), Category = Tile)
+		void OnMoveMade(ETileMoveType::Type MoveType);
 
-	/** 행 기준 최소 맞춰야 할 타일 수*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 MinimumRunLength;
+	UFUNCTION(BlueprintCallable, Category = Audio)
+		void ReturnMatchSound(TArray<class USoundWave*>& MatchSounds);
 
-	/** Grid 행, 타일의 위치를 계산 할 때 사용*/
-	UPROPERTU(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 GridWidth;
+	UFUNCTION(BlueprintCallable, Category = Tile)
+		FVector GetLocationFromGridAddress(int32 GridAddress) const;
 
-	/** Grid 열*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
-		int32 GirdHeight;
+	UFUNCTION(Category = Tile)
+		FVector GetLocationFromGridAddressWithOffset(int32 GridAddress, int32 XOffsetInTiles, int32 YOffsetInTiles) const;
+
+	UFUNCTION(BlueprintCallable, Category = Tile)
+		bool GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, int32 YOffset, int32& ReturnGridAddress) const;
+
+	UFUNCTION(BlueprintCallable, Category = Game)
+		int32 GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType);
 
 	/**
 	@Param SpawGridAddress : Grid Index
@@ -52,24 +49,6 @@ public:
 	int32 SelectTileFromLibrary();
 
 	ATile* GetTileFromGridAddress(int32 GridAddress) const;
-
-	UFUNCTION(BlueprintCallable, Category = Initialization)
-		void InitGrid();
-
-	UFUNCTION(BlueprintImplementableEvent, meta = (ExpandEnumAsExecs = MoveType), Category = Tile)
-		void OnMoveMade(ETileMovingType  MoveType);
-
-	UFUNCTION(BlueprintCallable, Cateogyr = Audio)
-		void ReturnMatchSound(TArray<class USoundMove*>& MatchSounds);
-
-	UFUNCTION(BlueprintCallable, Category = Tile)
-		FVector GetLocationFromGridAddress(int32 GridAddress) const;
-	
-	UFUNCTION(Category = Tile)
-		FVector GetLocationFromGridAddressWithOffset(int32 GridAddress, in32 XOffsetInTiles, int32 YOffsetInTiles) const;
-
-	UFUNCTION(BlueprintCallable, Category = Tile)
-		bool GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, int32 YOffset, int32& ReturnGridAddress) const;
 
 	bool AreAddressNeighbors(int32 GridAddress, int32 GridAddressB) const;
 	
@@ -112,6 +91,7 @@ public:
 	TArray<ATile*> FindTilesOfType(int32 TileTypeID);
 	
 	void ExcuteMatch(const TArray<ATile*>& MatchingTiles);
+
 	void OnTileWasSelecting(ATile* NewSelectedTile);
 	/// <summary>
 	/// 현재 타일의 조합에서 맞출 수 없는 경우
@@ -120,12 +100,32 @@ public:
 	bool IsUnwinnable();
 
 	void SetLastMove(ETileMovingType MoveType);
+
 	ETileMovingType GetLastMove();
 
-	UFUNCTION(BlueprintCallable, Category = Game)
-		int32 GetScoreMultiplierForMove(ETileMovingType LastMoveType);
-
 	inline ATile* GetCurrentlySelectedTile()const { return CurrentlySelectedTile; }
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		TArray<class ATile*> GameTiles;
+
+	UPROPRTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FTileType> TileLibrary;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FVector2D TileSize;
+
+	/** 행 기준 최소 맞춰야 할 타일 수*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
+		int32 MinimumRunLength;
+
+	/** Grid 행, 타일의 위치를 계산 할 때 사용*/
+	UPROPERTU(EditAnywhere, BlueprintReadWrite, Category = Tile)
+		int32 GridWidth;
+
+	/** Grid 열*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
+		int32 GirdHeight;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tile)
@@ -143,4 +143,3 @@ private:
 };
 
 
-#endif // !__U3MATCH_GRID__

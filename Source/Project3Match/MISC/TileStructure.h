@@ -1,12 +1,10 @@
 
-#ifndef __U3MATCH_TILE_STRUCT__
-#define __U3MATCH_TILE_STRUCT__
-
+#pragma once
 #include "HAL/Platform.h"
 
 namespace Tile 
 {
-	USTRCUT(BlueprintType)
+	USTRUCT(BlueprintType)
 	struct FTileAbilities
 	{
 		GENERATED_USTRUCT_BODY();
@@ -38,4 +36,3 @@ namespace Tile
 			uint32 bPreventSwapping : 1;
 	};
 }
-#endif
