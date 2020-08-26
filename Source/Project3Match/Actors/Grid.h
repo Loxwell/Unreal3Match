@@ -86,7 +86,7 @@ public:
 	/// <param name="bMustMatchID"></param>
 	/// <param name="RunLegnth"></param>
 	/// <returns></returns>
-	TArray<ATile*> FindNeighbors(ATile* StartingTile, boll bMustMatchID = true, int32 RunLegnth = -1) const;
+	TArray<ATile*> FindNeighbors(ATile* StartingTile, bool bMustMatchID = true, int32 RunLegnth = -1) const;
 
 	TArray<ATile*> FindTilesOfType(int32 TileTypeID);
 	
@@ -99,9 +99,9 @@ public:
 	/// <returns></returns>
 	bool IsUnwinnable();
 
-	void SetLastMove(ETileMovingType MoveType);
+	void SetLastMove(ETileMoveType::Type MoveType);
 
-	ETileMovingType GetLastMove();
+	ETileMoveType::Type GetLastMove();
 
 	inline ATile* GetCurrentlySelectedTile()const { return CurrentlySelectedTile; }
 
@@ -109,8 +109,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		TArray<class ATile*> GameTiles;
 
-	UPROPRTY(EditAnywhere, BlueprintReadWrite)
-		TArray<FTileType> TileLibrary;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<Grid::FTileType> TileLibrary;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FVector2D TileSize;
@@ -120,7 +120,7 @@ public:
 		int32 MinimumRunLength;
 
 	/** Grid 행, 타일의 위치를 계산 할 때 사용*/
-	UPROPERTU(EditAnywhere, BlueprintReadWrite, Category = Tile)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
 		int32 GridWidth;
 
 	/** Grid 열*/
@@ -137,7 +137,7 @@ private:
 	TArray<ATile*> SawppingTiles;
 	TArray<ATile*> TilesToCheck;
 	TArray<ATile*> TilesBeingDestroyed;
-	TMap<class APlayerController*, ETileMovingType> LastMoves;
+	TMap<class APlayerController*, ETileMoveType::Type> LastMoves;
 	uint32 bPendingSwapMove : 1;
 	uint32 bPendingSwapMoveSuccess : 1;
 };

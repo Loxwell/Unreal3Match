@@ -55,7 +55,7 @@ ATile* AGrid::CreateTile(TSubclassOf<ATile> UClassOfTile, class UMaterialInstanc
 	return nullptr;
 }
 
-int32 SAGrid::electTileFromLibrary()
+int32 AGrid::SelectTileFromLibrary()
 {
 	return 0;
 }
@@ -105,7 +105,7 @@ TArray<ATile*> AGrid::GetExploionList(ATile* Tile) const
 
 }
 
-TArray<ATile*> AGrid::FindNeighbors(ATile* StartingTile, boll bMustMatchID = true, int32 RunLegnth = -1) const
+TArray<ATile*> AGrid::FindNeighbors(ATile* StartingTile, bool bMustMatchID = true, int32 RunLegnth = -1) const
 {
 
 }
@@ -130,12 +130,12 @@ bool AGrid::IsUnwinnable()
 	return false;
 }
 
-void AGrid::SetLastMove(ETileMovingType MoveType)
+void AGrid::SetLastMove(ETileMoveType::Type MoveType)
 {
 
 }
 
-ETileMovingType AGrid::GetLastMove()
+ETileMoveType::Type AGrid::GetLastMove()
 {
-	return ETileMovingType::MT_NONE;
+	return ETileMoveType::Type::MT_NONE;
 }

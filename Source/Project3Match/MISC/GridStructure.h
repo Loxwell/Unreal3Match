@@ -21,7 +21,7 @@ namespace Grid
 			FLinearColor EffectColor = FLinearColor::White;
 
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
-			FTileAbilities Abilities;
+			Tile::FTileAbilities Abilities;
 
 		UPROPERTY(EditAnywhere, BlueprintReadWrite)
 			float Probability = 1.f;

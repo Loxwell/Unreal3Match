@@ -5,7 +5,7 @@
 UENUM(BlueprintType)
 namespace ETileMoveType
 {
-	enum EType
+	enum Type
 	{
 		MT_NONE,
 		MT_FAILURE,

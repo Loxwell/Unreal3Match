@@ -1,6 +1,8 @@
 
 #pragma once
 #include "HAL/Platform.h"
+#include "UObject/ObjectMacros.h"
+
 
 namespace Tile 
 {
