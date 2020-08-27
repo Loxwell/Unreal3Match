@@ -14,6 +14,8 @@ public:
 	UFUNCTION()
 		virtual void SetTileMaterial(class UMaterialInstanceConstant* TileMaterial);
 
+	void StartFalling(bool bUseCurrentWorldLocation = false);
+
 	inline int32 GetGridAddress() const { return GridAddress; }
 	inline void SetGridAddress(int32 NewAddressLocation);
 

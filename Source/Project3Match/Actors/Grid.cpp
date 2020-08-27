@@ -1,8 +1,10 @@
 #include "Grid.h"
 #include "Tile.h"
 #include "../Project3MatchGameModeBase.h"
-#include "Sound/SoundWave.h"
 #include "../MISC/EnumLibrary.h"
+
+#include "Sound/SoundWave.h"
+#include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 
 AGrid::AGrid(const FObjectInitializer& ObjectInitializer)
@@ -176,6 +178,19 @@ bool AGrid::GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, in
 	return true;
 }
 
+bool AGrid::AreAddressesNeighbors(int32 GridAddressA, int32 GridAddressB) const
+{
+	if ((FMath::Min(GridAddressA, GridAddressB) >= 0)
+		&& (FMath::Max(GridAddressA, GridAddressB) < (GridWidth * GridHeight)))
+	{
+		int32 GridAddressOffset = FMath::Abs(GridAddressA - GridAddressB);
+
+		// 두 Index가 연결 또는 끝과 끝 (0 - Width or Width - 0) 일 경우
+		return ((GridAddressOffset == 1) || (GridAddressOffset == GridWidth));
+	}
+	return false;
+}
+
 void AGrid::OnTileFinishedFalling(ATile* Tile, int32 LandingGridAddress)
 {
 	int32 ReturnGridAddress = 0;
@@ -199,30 +214,110 @@ void AGrid::OnTileFinishedFalling(ATile* Tile, int32 LandingGridAddress)
 		Tile->SetTileState(ETS_NORMAL);
 	}
 
+	// This tile is no longer falling, remove it from the list.
 	FallingTiles.RemoveSingleSwap(Tile);
 	TilesToCheck.Add(Tile);
 
-	/// <summary>
-	/// with all falling tiles. Spawn new ones at the top of each column in the appropriate quantity.
-	/// 타일이 전부 이동이 완료 된 경우, 상단 부터 비어 있는 Column에 새로운 Tile 생성
-	/// </summary>
-	/// <param name="Tile"></param>
-	/// <param name="LandingGridAddress"></param>
+	// Done with all falling tiles. Spawn new ones at the top of each column in the appropriate quantity.
+	// 타일이 전부 이동이 완료 된 경우, 상단 부터 비어 있는 Column에 새로운 Tile 생성
 	if (FallingTiles.Num() == 0)
 		RespawnTiles();
 }
 
-bool AGrid::AreAddressesNeighbors(int32 GridAddressA, int32 GridAddressB) const
+void AGrid::OnTileFinishedMatching(ATile* InTile)
 {
-	if((FMath::Min(GridAddressA, GridAddressB) >= 0) 
-		&& (FMath::Max(GridAddressA, GridAddressB) < (GridWidth * GridHeight)))
+	if (InTile)
 	{
-		int32 GridAddressOffset = FMath::Abs(GridAddressA - GridAddressB);
-		
-		// 두 Index가 연결 또는 끝과 끝 (0 - Width or Width - 0) 일 경우
-		return ((GridAddressOffset == 1) || (GridAddressOffset == GridWidth));
+		TilesBeingDestroyed.RemoveSwap(InTile);
+		InTile->AActor::Destroy();
 	}
-	return false;
+
+	if (TilesBeingDestroyed.Num() == 0)
+	{
+		for (ATile* Tile : FallingTiles)
+			Tile->StartFalling();
+		if (FallingTiles.Num() == 0)
+			RespawnTiles();
+	}
+}
+
+void AGrid::RespawnTiles()
+{
+	for (int32 x = 0; x < GridWidth; ++x)
+	{
+		int32 BaseAddress = 0, TestAddress = 0;
+		if (GetGridAddressWithOffset(0, x, GridHeight - 1, BaseAddress))
+		{
+			int32 YDepth = 0;
+			// BaseAddress 및 TestAddress 평가
+			for (YDepth = 0; GetGridAddressWithOffset(BaseAddress, 0, -YDepth, TestAddress)
+				&& (!GetTileFromGridAddress(TestAddress)); ++YDepth)
+			{ /* This loop finds the lowest Y value, but does nothing with it.*/ }
+			
+			for (int32 y = YDepth - 1; y >= 0; --y)
+			{
+				int32 NewTileTypeID = SelectTileIDFromLibrary();
+				GetGridAddressWithOffset(BaseAddress, 0, -y, TestAddress);
+
+				/// <summary>
+				/// Move our tile up visually so it has room to fall, but don't change its grid address. 
+				/// The new grid address would be off-grid and invalid anyway.
+				/// </summary>
+				if (ATile* NewTile = CreateTile(TileLibrary[NewTileTypeID].TileClass, TileLibrary[NewTileTypeID].TileMaterial,
+					GetLocationFromGridAddressWithOffset(TestAddress, 0, (YDepth + 1)), TestAddress, NewTileTypeID))
+				{
+					TilesToCheck.Add(NewTile);
+					NewTile->SetTileState(ETileState::ETS_FALLING);
+					check(!FallingTiles.Contains(NewTile));
+					FallingTiles.Add(NewTile);
+				}
+
+			}
+		}
+		else
+			check(false);
+
+		if (FallingTiles.Num() > 0)
+		{
+			/// <summary>
+			/// Any falling tiles that exist at this point are new ones, 
+			/// and are falling from physical locations (off-grid) to their correct locations.
+			/// </summary>
+			for (ATile* Tile : FallingTiles)
+				Tile->StartFalling();
+		}
+
+		TArray<ATile*> AllMatchingTiles;
+		for (ATile* Tile : TilesToCheck)
+		{
+			TArray<ATile*> MatchingTiles = FindNeighbors(Tile);
+			for (ATile* MatchingTile : MatchingTiles)
+				AllMatchingTiles.AddUnique(MatchingTile);
+		}
+
+		/// <summary>
+		/// 타일이 일치한 줄이 있다면
+		/// </summary>
+		if (AllMatchingTiles.Num() > 0)
+		{
+			SetLastMove(ETileMoveType::MT_COMBO);
+			ExcuteMatch(AllMatchingTiles);
+		}
+		else
+		{
+			if (IsUnwinnable())
+			{
+				if (AProject3MatchGameModeBase* GameMode = Cast<AProject3MatchGameModeBase>(UGameplayStatics::GetGameMode(this)))
+				{
+					// 추후 타일 재설정으로 변경 할 것
+					GameMode->GameOver();
+					return;
+				}
+			}
+
+			//UMatch3BlueprintFunctionLibrary::PauseGameTimer(this, false);
+		}
+	}
 }
 
 void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
@@ -235,17 +330,7 @@ int32 AGrid::GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType)
 	return 0;
 }
 
-void AGrid::OnTileFinishedMatching(ATile* InTile)
-{
-
-}
-
 void AGrid::OnSwapDisplayFinished(ATile* InTile)
-{
-
-}
-
-void AGrid::RespawnTiles()
 {
 
 }

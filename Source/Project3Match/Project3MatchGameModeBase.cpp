@@ -3,3 +3,7 @@
 
 #include "Project3MatchGameModeBase.h"
 
+void AProject3MatchGameModeBase::GameOver()
+{
+
+}

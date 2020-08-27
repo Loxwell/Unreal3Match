@@ -14,4 +14,6 @@ class PROJECT3MATCH_API AProject3MatchGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+	void GameOver();
 };

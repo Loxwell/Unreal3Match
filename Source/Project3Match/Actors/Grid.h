@@ -132,6 +132,10 @@ public:
 
 	TArray<ATile*> FindTilesOfType(int32 TileTypeID);
 	
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="MatchingTiles"></param>
 	void ExcuteMatch(const TArray<ATile*>& MatchingTiles);
 
 	void OnTileWasSelecting(ATile* NewSelectedTile);
