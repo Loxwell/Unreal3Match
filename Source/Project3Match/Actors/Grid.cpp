@@ -2,10 +2,13 @@
 #include "Tile.h"
 #include "../Project3MatchGameModeBase.h"
 #include "../MISC/EnumLibrary.h"
+#include "../MISC/Match3BPFunctionLibrary.h"
 
 #include "Sound/SoundWave.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
+
+using A3MatchGameMode = AProject3MatchGameModeBase;
 
 AGrid::AGrid(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer),
@@ -159,12 +162,12 @@ bool AGrid::GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, in
 	check(GridWidth > 0);
 
 	NewAxisValue = (InitialGridAddress % GridWidth) + XOffset;
-	// 0번째 부터 가로 개수 - 1 사이 값
+	// 0번째 부터 (가로 개수 - 1) 사이 값
 	if(NewAxisValue != FMath::Clamp(NewAxisValue, 0, (GridWidth - 1)))
 		return false;
 	
 	NewAxisValue = (InitialGridAddress / GridWidth) + YOffset;
-	// 0번째 부터 세로 개수 - 1 사이 값
+	// 0번째 부터 (세로 개수 - 1 사이) 값
 	if (NewAxisValue != FMath::Clamp(NewAxisValue, 0, (GridHeight - 1)))
 		return false;
 
@@ -180,8 +183,8 @@ bool AGrid::GetGridAddressWithOffset(int32 InitialGridAddress, int32 XOffset, in
 
 bool AGrid::AreAddressesNeighbors(int32 GridAddressA, int32 GridAddressB) const
 {
-	if ((FMath::Min(GridAddressA, GridAddressB) >= 0)
-		&& (FMath::Max(GridAddressA, GridAddressB) < (GridWidth * GridHeight)))
+	if ((FMath::Min(GridAddressA, GridAddressB) >= 0) // 둘다 index 0 보다 큰 양수 Index
+		&& (FMath::Max(GridAddressA, GridAddressB) < (GridWidth * GridHeight))) // Width * Height 보다 작은 양수 Index
 	{
 		int32 GridAddressOffset = FMath::Abs(GridAddressA - GridAddressB);
 
@@ -271,7 +274,6 @@ void AGrid::RespawnTiles()
 					check(!FallingTiles.Contains(NewTile));
 					FallingTiles.Add(NewTile);
 				}
-
 			}
 		}
 		else
@@ -301,13 +303,13 @@ void AGrid::RespawnTiles()
 		if (AllMatchingTiles.Num() > 0)
 		{
 			SetLastMove(ETileMoveType::MT_COMBO);
-			ExcuteMatch(AllMatchingTiles);
+			ExecuteMatch(AllMatchingTiles);
 		}
 		else
 		{
 			if (IsUnwinnable())
 			{
-				if (AProject3MatchGameModeBase* GameMode = Cast<AProject3MatchGameModeBase>(UGameplayStatics::GetGameMode(this)))
+				if (A3MatchGameMode* GameMode = Cast<A3MatchGameMode>(UGameplayStatics::GetGameMode(this)))
 				{
 					// 추후 타일 재설정으로 변경 할 것
 					GameMode->GameOver();
@@ -320,6 +322,263 @@ void AGrid::RespawnTiles()
 	}
 }
 
+void AGrid::SwapTiles(ATile* A, ATile* B, bool bRepositionTileActors/*=false 테스트 용도로 함수 호출 할 경우, 반대는 true*/)
+{
+	// A,B 서로 Grid Index 교환
+	int32 GridAddress = A->GetGridAddress();
+	A->SetGridAddress(B->GetGridAddress());
+	B->SetGridAddress(GridAddress);
+
+	// 변경 된 Index로 배열 참조 교환
+	GameTiles[A->GetGridAddress()] = A;
+	GameTiles[B->GetGridAddress()] = B;
+
+	if (bRepositionTileActors) // 변경 된 Index의 위치로 변경
+	{
+		A->SetActorLocation(GetLocationFromGridAddress(A->GetGridAddress()));
+		B->SetActorLocation(GetLocationFromGridAddress(B->GetGridAddress()));
+	}
+}
+
+TArray<ATile*> AGrid::GetExplosionList(ATile* Tile) const
+{
+	check(Tile);
+	check(Tile->Abilities.CanExplode());
+	int32 AdjustedBombPower = Tile->Abilities.BoobPower;
+	if(A3MatchGameMode* GameMode = Cast<A3MatchGameMode>(UGameplayStatics::GetGameMode(Tile)))
+		AdjustedBombPower = FMath::Max(1, AdjustedBombPower + 1 + GameMode->CalculateBombPower());
+	return FindNeighbors(Tile, false, AdjustedBombPower);
+}
+
+bool AGrid::IsMoveLegal(ATile* A, ATile* B)
+{
+	if (A && B && (A != B) && A->Abilities.CanSwap() && B->Abilities.CanSwap())
+	{
+		// 서로의 Index(Grid Address) 교환
+		SwapTiles(A, B);
+		LastLegalMatch = FindNeighbors(A);
+		LastLegalMatch.Append(FindNeighbors(B));
+		
+		//원상 복귀
+		SwapTiles(A, B);
+		return (LastLegalMatch.Num() > 0);
+	}
+	return false;
+}
+
+TArray<ATile*> AGrid::FindNeighbors(ATile* StartingTile, bool bMustMatchID/* = true */, int32 RunLegnth /* = MinimumRunLength */) const
+{
+	int32 NeighborGridAddress = -1;
+	ATile* NeighborTile = nullptr;
+	TArray<ATile*> MatchInProgress;
+	TArray<ATile*> AllMatchingTiles;
+
+	if (RunLegnth < 0)
+		RunLegnth = MinimumRunLength;
+
+	// 특이 사항 처리
+	if (RunLegnth == 0)
+		return AllMatchingTiles;
+	else if (RunLegnth == 1)
+	{
+		AllMatchingTiles.Add(StartingTile);
+		return AllMatchingTiles;
+	}
+
+	// 시작 위치 기준 좌우 Tile 확인
+	for (int32 H = 0; H < 2; ++H)
+	{
+		// 세로부터 검색 후 가로 검색
+		int32 MaxGridOffset = (!bMustMatchID) ? RunLegnth /* 최소값 2 이상 */ : (H ? GridWidth : GridHeight);
+		
+		for (int32 Dir = -1; Dir <= 1; Dir += 2/* -1에서 한칸 건너 띄어서 1*/)
+		{
+			// 최소 한번은 실행 보장
+			// bMustMatchID == true ? ( H == 0 : GridHeight ) : RunLegnth
+			// bMustMatchID == true ? ( H == 1 : GridWidth ) : RunLegnth
+			for (int32 GridOffset = 1; GridOffset < MaxGridOffset; ++GridOffset)
+			{
+				// H == 0 이면 상하 Grid Address(0, -1),(0, 1) => 상단에서 하단으로 이동시 Y값이 증가 또는 감소하는지 확인 바람
+				// 순서는 
+				// H == 0 && Dir == -1 : (0,-1)->(0,-2)->(0,-3)->(0,-4)->(0,-(MaxGridOffset{GridHeight or RunLegnth} - 1)) 세로
+				// H == 0 && Dir ==  1 : (0, 1)->(0, 2)->(0, 3)->(0, 4)->(0, (MaxGridOffset{GridHeight or RunLegnth} - 1)) 세로
+				// H == 1 && Dir == -1 : (-1,0)->(-2,0)->(-3,0)->(-4,0)->(-(MaxGridOffset{GridWidth or RunLegnth} - 1),0) 좌
+				// H == 1 && Dir == -1 : (1, 0)->(2, 0)->(3, 0)->(4, 0)->((MaxGridOffset{GridWidth or RunLegnth} - 1), 0) 우
+				
+				// 타일 타입이 일치 하지 않을 경우 또는 경계를 벗어나면 중지
+				if (GetGridAddressWithOffset(StartingTile->GetGridAddress(), Dir * (H ? GridOffset : 0), Dir * (H ? 0 : GridOffset), NeighborGridAddress))
+				{
+					NeighborTile = GetTileFromGridAddress(NeighborGridAddress);
+					if (NeighborTile && ((NeighborTile->GetTileTypeID() == StartingTile->GetTileTypeID()) || !bMustMatchID))
+					{
+						MatchInProgress.AddUnique(NeighborTile);
+						continue;
+					}
+					break;
+				}
+			}
+		}
+
+		// See if we have enough to complete a run, or if matching wasn't required. If so, keep the tiles.
+		// Note that we add 1 to our match-in-progress because the starting tile isn't counted yet.
+		// Column 일치 타일들 추가 후 Row 일치 한 타일들 추가
+		// MatchInProgress.Num() : StartingTile의 ID와 일치한 타일의 개수
+		// 1 : StartingTile
+		if ((MatchInProgress.Num() + 1) >= FMath::Min(RunLegnth, H ? GridWidth : GridHeight) || !bMustMatchID)
+			AllMatchingTiles.Append(MatchInProgress);
+		MatchInProgress.Empty();
+	}
+
+	// If we found any other tile, or if we're not concerned with matching TileID, then we know we have a valid run, and we need to add the original tile to the list.
+	// If we do care about matching tile type and we haven't found anything by this point, then we don't have a match and should not return the starting tile in a list by itself.
+	if ((AllMatchingTiles.Num() > 0 || !bMustMatchID))
+		AllMatchingTiles.Add(StartingTile); // 시작 타일과 일치한 타일들이 있을 경우, 시작 타일도 포함
+
+	return AllMatchingTiles;
+}
+
+TArray<ATile*> AGrid::FindTilesOfType(int32 TileTypeID)
+{
+	TArray<ATile*> MatchingTiles;
+	for (ATile* Tile : GameTiles)
+	{
+		if (Tile && Tile->GetTileTypeID() == TileTypeID)
+			MatchingTiles.AddUnique(Tile);
+	}
+	return MatchingTiles;
+}
+
+/// <Summary>
+/// 일치한 타일 삭제 및 점수 득점
+/// </Summary>
+void AGrid::ExecuteMatch(const TArray<ATile*>& MatchingTiles)
+{
+	if (MatchingTiles.Num() == 0)
+		return;
+
+	UMatch3BPFunctionLibrary::PauseGameTimer(this, true);
+
+	int32 NextAddressUp = -1;
+	ATile* NextTileUp = nullptr;
+	for (ATile* MatchingItem : MatchingTiles)
+	{
+		check(MatchingItem != nullptr)
+
+		for (int32 YOffset = 1; YOffset < GridHeight; ++YOffset)
+		{
+			// 매칭 된 타일을 기준으로 Y축 이동
+			if (GetGridAddressWithOffset(MatchingItem->GetGridAddress(), 0, YOffset, NextAddressUp))
+			{
+				NextTileUp = GetTileFromGridAddress(NextAddressUp);
+
+				// 매칭 된 타일의 윗 타일이 일치하는 타일 목록 내 없을 경우
+				if (NextTileUp && !MatchingTiles.Contains(NextTileUp)) 
+				{
+					// 상태를 Falling으로 변경
+					NextTileUp->SetTileState(ETileState::ETS_FALLING);
+					// FallingTiles 목록에 이미 등록 되어 있는지 확인
+					check(!FallingTiles.Contains(NextTileUp));
+					FallingTiles.Add(NextTileUp);
+					continue;
+				}
+				break;
+			}
+		}
+		// 매칭 목록에 있는 타일을 삭제 대기 상태로 변경
+		MatchingItem->SetTileState(ETileState::ETS_PENDING_DELETE);
+	}
+
+	// 이동 할 타일 수와 일치 되서 삭제 될 타일 수를 기반으로 
+	// 보드를 다시 채울 타일 수 확인 단계 (삭제 된 타일 수 만 재 생성)
+	TilesToCheck.Reset(FallingTiles.Num() + MatchingTiles.Num());
+
+	{
+		if (AProject3MatchGameModeBase* GameMode = Cast<AProject3MatchGameModeBase>(UGameplayStatics::GetGameMode(this)))
+		{
+			ETileMoveType::Type MoveType = GetLastMove();
+			int32 ScoreMul = GetScoreMultiplierForMove(MoveType);
+
+			switch (MoveType)
+			{
+			case ETileMoveType::MT_BOMB:
+			case ETileMoveType::MT_ALL_THE_BOMBS:
+				// 기존의 누적 된 콤보는 초기화
+				GameMode->SetComboPower(0);
+				break;
+			case ETileMoveType::MT_COMBO:
+				GameMode->SetComboPower(FMath::Min(GameMode->GetMaxComboPower(), GameMode->GetComboPower() + 1));
+				break;
+			}
+			OnMoveMade(MoveType);
+			GameMode->AddScore(MatchingTiles.Num() * ScoreMul);
+		}
+
+		for (ATile* MatchingItem : MatchingTiles)
+		{
+			// 매칭 된 타일 삭제 -> 메모리 풀 방식으로 변경 할 것
+			TilesBeingDestroyed.Add(MatchingItem);
+			GameTiles[MatchingItem->GetGridAddress()] = nullptr;
+			MatchingItem->OnMatched(GetLastMove());
+		}
+
+		// 삭제 할 타일이 없는 경우도 확인
+		OnTileFinishedMatching(nullptr);
+	}
+}
+
+void AGrid::OnSwapDisplayFinished(ATile* Tile)
+{
+	SwappingTiles.Add(Tile);
+	if (SwappingTiles.Num() == 2)
+	{
+		check(SwappingTiles[0] && SwappingTiles[1]);
+		bPendingSwapMove = false;
+		if (bPendingSwapMoveSuccess)
+		{
+			SwapTiles(SwappingTiles[0], SwappingTiles[1], true);
+			SwappingTiles.Reset();
+			if (LastLegalMatch.Num() > MinimumRunLength)
+				SetLastMove(ETileMoveType::MT_MORE_TILES);
+			else
+				SetLastMove(ETileMoveType::MT_STANDARD);
+
+			// 유효 타일 처리
+			ExecuteMatch(LastLegalMatch);
+		}
+		else
+		{
+			SwappingTiles.Empty();
+			OnMoveMade(ETileMoveType::MT_FAILURE);
+		}
+	}
+}
+
+void AGrid::OnTileWasSelected(ATile* NewSelectedTile)
+{
+	// 현재 이동 중인 타일, 일치한 타일이 있을 경우, 현재 GamePlay 상태가 정지 상태, 선택 한 타일이 Null 인 경우
+	if (FallingTiles.Num() || TilesBeingDestroyed.Num() || !UMatch3BPFunctionLibrary::IsGameActive(this) || !NewSelectedTile)
+		return;
+
+	FTileType& NewSelectedTileType = TileLibrary[NewSelectedTile->GetTileTypeID()];
+	if (CurrentlySelectedTile)
+	{
+		// 이미 선택 된 타일과 현재 선택한 타일이 서로 이웃 인지 확인
+		if (AreAddressesNeighbors(CurrentlySelectedTile->GetGridAddress(), NewSelectedTile->GetGridAddress()))
+		{
+			if (NewSelectedTileType.Abilities.CanSwap())
+			{
+				bPendingSwapMove = true;
+				bPendingSwapMoveSuccess = (IsMoveLegal(CurrentlySelectedTile, NewSelectedTile));
+				
+			}
+		}
+	}
+	else
+	{
+
+	}
+}
+
 void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
 {
 
@@ -328,46 +587,6 @@ void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
 int32 AGrid::GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType)
 {
 	return 0;
-}
-
-void AGrid::OnSwapDisplayFinished(ATile* InTile)
-{
-
-}
-
-void AGrid::SwapTiles(ATile* From, ATile* To, bool bRepositionTileActors)
-{
-
-}
-
-bool AGrid::IsMovingLegal(ATile* Form, ATile* To)
-{
-	return false;
-}
-
-TArray<ATile*> AGrid::GetExploionList(ATile* Tile) const
-{
-	return TArray<ATile*>();
-}
-
-TArray<ATile*> AGrid::FindNeighbors(ATile* StartingTile, bool bMustMatchID, int32 RunLegnth) const
-{
-	return TArray<ATile*>();
-}
-
-TArray<ATile*> AGrid::FindTilesOfType(int32 TileTypeID)
-{
-	return TArray<ATile*>();
-}
-
-void AGrid::ExcuteMatch(const TArray<ATile*>& MatchingTiles)
-{
-
-}
-
-void AGrid::OnTileWasSelecting(ATile* NewSelectedTile)
-{
-
 }
 
 bool AGrid::IsUnwinnable()

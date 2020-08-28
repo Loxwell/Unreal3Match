@@ -17,8 +17,8 @@ public:
 
 	}
 
-	bool CanExplode() { return bExplodes; }
-	bool CanSweap() { return !bPreventSwapping && !bExplodes; }
+	inline bool CanExplode() { return bExplodes; }
+	inline bool CanSwap() { return !bPreventSwapping && !bExplodes; }
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

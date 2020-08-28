@@ -16,3 +16,7 @@ void ATile::StartFalling(bool bUseCurrentWorldLocation)
 {
 
 }
+
+void ATile::OnMatched(ETileMoveType::Type MoveType)
+{
+}

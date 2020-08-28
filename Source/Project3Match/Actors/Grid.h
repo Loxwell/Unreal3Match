@@ -48,7 +48,7 @@ protected:
 private:
 	TArray<ATile*> LastLegalMatch;
 	TArray<ATile*> FallingTiles;
-	TArray<ATile*> SawppingTiles;
+	TArray<ATile*> SwappingTiles;
 	TArray<ATile*> TilesToCheck;
 	TArray<ATile*> TilesBeingDestroyed;
 	TMap<class APlayerController*, ETileMoveType::Type> LastMoves;
@@ -113,14 +113,14 @@ public:
 	void OnSwapDisplayFinished(ATile* InTile);
 
 	void RespawnTiles();
-	void SwapTiles(ATile* From, ATile* To, bool bRepositionTileActors = false);
+	void SwapTiles(ATile* A, ATile* B, bool bRepositionTileActors = false);
 
 	/**
-	* 해당 타일 위치로 이동 할 수 있는지 사전 시험
+	* 두개의 타일이 서로 위치를 교환 할 수 있는지 시험
 	*/
-	bool IsMovingLegal(ATile* Form, ATile* To);
+	bool IsMoveLegal(ATile* A, ATile* B);
 
-	TArray<ATile*> GetExploionList(ATile* Tile) const;
+	TArray<ATile*> GetExplosionList(ATile* Tile) const;
 	/// <summary>
 	/// 
 	/// </summary>
@@ -136,9 +136,9 @@ public:
 	/// 
 	/// </summary>
 	/// <param name="MatchingTiles"></param>
-	void ExcuteMatch(const TArray<ATile*>& MatchingTiles);
+	void ExecuteMatch(const TArray<ATile*>& MatchingTiles);
 
-	void OnTileWasSelecting(ATile* NewSelectedTile);
+	void OnTileWasSelected(ATile* NewSelectedTile);
 	/// <summary>
 	/// 현재 타일의 조합에서 맞출 수 없는 경우
 	/// </summary>
