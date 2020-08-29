@@ -5,6 +5,8 @@
 #include "../MISC/EnumLibrary.h"
 #include "Tile.generated.h"
 
+#define SPECIAL_TYPE "Special Game Events"
+
 UCLASS()
 class PROJECT3MATCH_API ATile : public APaperSpriteActor
 {
@@ -13,9 +15,17 @@ class PROJECT3MATCH_API ATile : public APaperSpriteActor
 public:
 	UFUNCTION()
 		virtual void SetTileMaterial(class UMaterialInstanceConstant* TileMaterial);
+	UFUNCTION(BlueprintNativeEvent, Category = SPECIAL_TYPE)
+		void OnSwapMove(ATile * OtherTile, bool bMoveWillSuccess);
+	virtual void OnSwapMove_Implementation(ATile* OtherTile, bool bMoveWillSuccess);
+
+	// 이벤트 메신저 기법 디자인 패턴 찾아 볼 것
+	UFUNCTION(BlueprintImplementableEvent, Category = SPECIAL_TYPE)
+		void PlaySelectionEffect(bool bTurnEffectOn);
 
 	void StartFalling(bool bUseCurrentWorldLocation = false);
 	void OnMatched(ETileMoveType::Type MoveType);
+
 	inline int32 GetGridAddress() const { return GridAddress; }
 	inline void SetGridAddress(int32 NewAddressLocation);
 

@@ -12,6 +12,10 @@ void ATile::SetGridAddress(int32 NewAddressLocation)
 
 }
 
+void ATile::OnSwapMove_Implementation(ATile* OtherTile, bool bMoveWillSuccess)
+{
+}
+
 void ATile::StartFalling(bool bUseCurrentWorldLocation)
 {
 

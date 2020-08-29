@@ -316,8 +316,7 @@ void AGrid::RespawnTiles()
 					return;
 				}
 			}
-
-			//UMatch3BlueprintFunctionLibrary::PauseGameTimer(this, false);
+			UMatch3BPFunctionLibrary::PauseGameTimer(this, false);
 		}
 	}
 }
@@ -556,7 +555,8 @@ void AGrid::OnSwapDisplayFinished(ATile* Tile)
 void AGrid::OnTileWasSelected(ATile* NewSelectedTile)
 {
 	// 현재 이동 중인 타일, 일치한 타일이 있을 경우, 현재 GamePlay 상태가 정지 상태, 선택 한 타일이 Null 인 경우
-	if (FallingTiles.Num() || TilesBeingDestroyed.Num() || !UMatch3BPFunctionLibrary::IsGameActive(this) || !NewSelectedTile)
+	if (FallingTiles.Num() || TilesBeingDestroyed.Num() || 
+		!UMatch3BPFunctionLibrary::IsGameActive(this) || !NewSelectedTile)
 		return;
 
 	FTileType& NewSelectedTileType = TileLibrary[NewSelectedTile->GetTileTypeID()];
@@ -569,19 +569,120 @@ void AGrid::OnTileWasSelected(ATile* NewSelectedTile)
 			{
 				bPendingSwapMove = true;
 				bPendingSwapMoveSuccess = (IsMoveLegal(CurrentlySelectedTile, NewSelectedTile));
-				
+				// 이동 할 타일과 이동 될 타일을 서로 위치 교환
+				CurrentlySelectedTile->OnSwapMove(NewSelectedTile, bPendingSwapMoveSuccess);
+				NewSelectedTile->OnSwapMove(CurrentlySelectedTile, bPendingSwapMoveSuccess);
 			}
+			else
+				// 두번째 타일이 Movable 타입이 아니라서 이동 불가
+				// 이동 하려고 했던 타일을 선택 취소 처리
+				OnMoveMade(ETileMoveType::MT_FAILURE);
 		}
+
+		// 선택 된 타일에 이벤트는 발생이 완료 된 시점이라 더 이상 현재 선택 중인 상태를 초기화 한다
+		CurrentlySelectedTile->PlaySelectionEffect(false);
+		CurrentlySelectedTile = nullptr;
 	}
 	else
 	{
+		// 선택 된 타일(들)의 특별한 기능 확인
+		// 추후 폭탄 이외 다양한 기능을 추가 할 것
+		// 특수 기능에 따라 함수포인터 또는 딜리게이트로 반환 받아서 함수 호출 하는 방식으로 변경 할 것
+		if (NewSelectedTileType.Abilities.CanExplode())
+		{
+			TArray<ATile*> TilesToDestroy;
+			if (A3MatchGameMode* GameMode = Cast<A3MatchGameMode>(UGameplayStatics::GetGameMode(this)))
+			{
+				// 모든 폭탄 타일을 한번에 폭발 유발
+				SetLastMove(ETileMoveType::MT_ALL_THE_BOMBS);
 
+				TArray<ATile*> SpecialTiles = FindTilesOfType(NewSelectedTile->GetTileTypeID());
+
+				TArray<ATile*> TileToDestroyForCurrentSpecialTiles;
+				for (ATile* Tile : SpecialTiles)
+				{
+					TileToDestroyForCurrentSpecialTiles = GetExplosionList(Tile);
+					for (ATile* TileToCheck : TileToDestroyForCurrentSpecialTiles)
+					{
+						// 중복 방지
+						TilesToDestroy.AddUnique(TileToCheck);
+					}
+				}
+			}
+
+			if (TilesToDestroy.Num() == 0)
+			{
+				SetLastMove(ETileMoveType::MT_BOMB);
+				TilesToDestroy = GetExplosionList(NewSelectedTile);
+			}
+			ExecuteMatch(TilesToDestroy);
+		}
+		else if (NewSelectedTileType.Abilities.CanSwap())
+		{
+			CurrentlySelectedTile = NewSelectedTile;
+			CurrentlySelectedTile->PlaySelectionEffect(true);
+		}
+		else
+			OnMoveMade(ETileMoveType::MT_FAILURE);
 	}
 }
 
-void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
+bool AGrid::IsUnwinnable()
 {
+	for (ATile* Tile : GameTiles)
+	{
+		check(Tile);
+		int32 TileGridAddress = Tile->GetGridAddress();
+		int32 NeighborGridAddress;
 
+		// 특수 타일(폭탄 등)은 항상 유효
+		if (Tile->Abilities.CanExplode())
+			return false;
+
+		for(int32 W = 0; W < 2; ++W)
+			for (int32 H = 0; H < 2; ++H)
+			{
+				int32 XOffset = (!W ? 0 : 1) * (!H ? -1 : 1);
+				int32 YOffset = (!W ? 1 : 0) * (!H ? -1 : 1);
+				// If any tile can move in any direction, then the game is not unwinnable.
+				// 어떤 방향이든 이동 가능 하다면, 게임은 계속 진행 가능
+				if (GetGridAddressWithOffset(TileGridAddress, XOffset, YOffset, NeighborGridAddress) && IsMoveLegal(Tile, GetTileFromGridAddress(NeighborGridAddress)))
+					return false;
+			}
+	}
+
+	/// <summary>
+	/// 특수 타일 및 이동 가능한 타일이 없음.
+	/// </summary>
+	/// <returns></returns>
+	return true;
+}
+
+void AGrid::SetLastMove(ETileMoveType::Type MoveType)
+{
+	if (APlayerController* PC = UMatch3BPFunctionLibrary::GetLocalPlayerController(this))
+	{
+		// Find (or add) the entry for this PlayerController and set it to the type of move that was just made.
+		// This is primarily useful for multiplayer games, but will work in single-player as well.
+		// <Key, Value> Pair
+		// Key = 현재 게임 체험자의 PlayerController 
+		// Value = enum ETileMoveType 
+		ETileMoveType::Type& LastMoveType = LastMoves.FindOrAdd(PC);
+		LastMoveType = MoveType;
+	}
+}
+
+ETileMoveType::Type AGrid::GetLastMove()
+{
+	// Retrieve the type of move most recently made by the given player.
+	// This could be stored as a single variable instead of a TMap if we were certain that our game would never support multiplayer.
+	if (APlayerController* PC = UMatch3BPFunctionLibrary::GetLocalPlayerController(this))
+	{
+		if (ETileMoveType::Type* MoveType = LastMoves.Find(PC))
+			return *MoveType;
+	}
+
+	return ETileMoveType::Type::MT_NONE;
 }
 
 int32 AGrid::GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType)
@@ -589,17 +690,7 @@ int32 AGrid::GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType)
 	return 0;
 }
 
-bool AGrid::IsUnwinnable()
-{
-	return false;
-}
-
-void AGrid::SetLastMove(ETileMoveType::Type MoveType)
+void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
 {
 
-}
-
-ETileMoveType::Type AGrid::GetLastMove()
-{
-	return ETileMoveType::Type::MT_NONE;
 }
