@@ -28,4 +28,11 @@ public:
 	int32 GetComboPower();
 	/** The game mode understands the concept of combo power. */
 	void SetComboPower(int32 NewComboPower);
+
+public:
+	inline float GetTileMoveSpeed() const { return TileMoveSpeed; }
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Game, Meta = (AllowPrivateAccess = true))
+		float TileMoveSpeed;
 };

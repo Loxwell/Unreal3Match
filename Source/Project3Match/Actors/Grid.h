@@ -9,6 +9,8 @@
 
 #include "Grid.generated.h"
 
+#define DEFAULT_VALUE 100
+
 class ATile;
 
 UCLASS()

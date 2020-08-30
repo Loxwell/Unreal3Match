@@ -687,10 +687,13 @@ ETileMoveType::Type AGrid::GetLastMove()
 
 int32 AGrid::GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType)
 {
-	return 0;
+	return DEFAULT_VALUE;
 }
 
 void AGrid::ReturnMatchSound(TArray<USoundWave*>& MatchSounds)
 {
-
+	MatchSounds.Reset();
+	if (TilesBeingDestroyed.Num() > 0)
+		for (ATile* Tile : TilesBeingDestroyed)
+			MatchSounds.AddUnique(Tile->GetMatchSound());
 }
