@@ -9,6 +9,11 @@ class PROJECT3MATCH_API AMatch3PlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	UFUNCTION(BlueprintCallable)
+		inline int32 GetScore() const { return 0; }
+	UFUNCTION(BlueprintCallable)
+		void AddScore(const int32& Points) { }
+
 	UFUNCTION(BlueprintNativeEvent, Category = Game)
 		int32 CalculateBombPower();
 	virtual int32 CalculateBombPower_Implementation();

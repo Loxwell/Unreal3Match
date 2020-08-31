@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
+
+#include "../MISC/LevelSaveData.h"
+
 #include "GlobalGameInstance.generated.h"
 
 /**
@@ -18,9 +21,12 @@ class PROJECT3MATCH_API UGlobalGameInstance : public UGameInstance
 public:
 	void SetCameraResize(const FVector2D& NewViewport) { StoredCameraViewport = NewViewport; }
 
-//protected:
-//	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Game")
-//		TSubclassOf<UUserWidget> UIGameScreen;
+	bool FindSaveDataForLevel(UObject* WorldContextObject, FLevelSaveData& SaveGameData);
+	void UpdateSave(UObject* WorldContextObject, FLevelSaveData& NewData);
+	void SaveGame();
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Game")
+		TSubclassOf<UUserWidget> UIGameScreen;
 private:
 	FVector2D StoredCameraViewport;
 };

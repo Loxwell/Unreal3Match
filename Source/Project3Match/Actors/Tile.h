@@ -103,9 +103,12 @@ protected:
 		USoundWave* MatchSound;
 
 	FTimerHandle TickFallingHandle;
+	/// <summary>
+	/// 이동 시작 지점
+	/// </summary>
 	FVector FallingStartLocation;
 	/// <summary>
-	/// 
+	/// 이동 목표 지점
 	/// </summary>
 	FVector FallingEndLocation;
 	/// <summary>

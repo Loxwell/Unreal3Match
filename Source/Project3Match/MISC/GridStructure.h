@@ -1,7 +1,6 @@
 
 #pragma once
 
-//#include "CoreMinimal.h"
 #include "Templates/SubclassOf.h"
 #include "UObject/ObjectMacros.h"
 
