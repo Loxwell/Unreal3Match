@@ -100,32 +100,93 @@ void A3GameMode::AddScore(int32 Points)
 		int32 OldScore = PC->GetScore();
 		PC->AddScore(Points);
 		int32 NewScore = PC->GetScore();
+		bGameWillBeWon = NewScore >= SaveGameData.GoldScore;
+
 		if (NewScore >= SaveGameData.GoldScore)
 		{
-
+			FinalPlace = 1;
+			AwardPlace(1, Points);
+		}
+		else if (NewScore >= SaveGameData.SilverScore)
+		{
+			FinalPlace = 2;
+			AwardPlace(2, Points);
+		}
+		else if (NewScore >= SaveGameData.BronzeScore)
+		{
+			FinalPlace = 3;
+			AwardPlace(3, Points);
+		}
+		else
+		{
+			FinalPlace = 0;
+			AwardPlace(0, Points);
 		}
 
+		for (const FReward& Reward : Rewards)
+		{
+			check(Reward.ScoreInterval > 0);
+			// Integer division to decide if we've crossed a bonus threshold
+			int32 ScoreAwardCount = (NewScore / Reward.ScoreInterval) - (OldScore / Reward.ScoreInterval);
+			if (ScoreAwardCount > 0)
+			{
+				float StartingTimeValue = GetWorldTimerManager().GetTimerRemaining(GameOverTimer);
+				if (StartingTimeValue >= 0)
+				{
+					GetWorldTimerManager().SetTimer(GameOverTimer, this, &AProject3MatchGameModeBase::GameOver, StartingTimeValue);
+					AwardBonus();
+				}
+			}
+		}
 	}
-}
-
-void A3GameMode::ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetUClass)
-{
-
 }
 
 void A3GameMode::UpdateScoresFromLeaderBoard(int32 GoldScore, int32 SilverScore, int32 BronzeScore)
 {
+	UGlobalGameInstance* GameInstance = Cast<UGlobalGameInstance>(UGameplayStatics::GetGameInstance(this));
+	SaveGameData.BronzeScore = BronzeScore;
+	SaveGameData.SilverScore = SilverScore;
+	SaveGameData.GoldScore = GoldScore;
+	GameInstance->SaveGame();
+}
 
+void A3GameMode::SetComboPower(int32 NewComboPower)
+{
+	if (AMatch3PlayerController* PC = Cast<AMatch3PlayerController>(UMatch3BPFunctionLibrary::GetLocalPlayerController(this)))
+		PC->SetComboPower(NewComboPower);
 }
 
 int32 A3GameMode::GetComboPower()
 {
+	if (AMatch3PlayerController* PC = Cast<AMatch3PlayerController>(UMatch3BPFunctionLibrary::GetLocalPlayerController(this)))
+		return PC->GetComboPower();
 	return 0;
 }
 
 int32 A3GameMode::GetMaxComboPower()
 {
+	if (AMatch3PlayerController* PC = Cast<AMatch3PlayerController>(UMatch3BPFunctionLibrary::GetLocalPlayerController(this)))
+		return PC->GetMaxComboPower();
 	return 0;
+}
+
+void A3GameMode::ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetUClass)
+{
+	if (CurrentWidget)
+	{
+		CurrentWidget->RemoveFromViewport();
+		CurrentWidget = nullptr;
+	}
+
+	if (NewWidgetUClass)
+	{
+		if (AMatch3PlayerController* PC = Cast<AMatch3PlayerController>(UMatch3BPFunctionLibrary::GetLocalPlayerController(this)))
+		{
+			CurrentWidget = CreateWidget(PC, NewWidgetUClass);
+			if (CurrentWidget)
+				CurrentWidget->AddToViewport();
+		}
+	}
 }
 
 int32 A3GameMode::CalculateBombPower_Implementation()
@@ -134,9 +195,4 @@ int32 A3GameMode::CalculateBombPower_Implementation()
 		Cast<AMatch3PlayerController>(UMatch3BPFunctionLibrary::GetLocalPlayerController(this)))
 		return PC->CalculateBombPower();
 	return 0;
-}
-
-void A3GameMode::SetComboPower(int32 NewComboPower)
-{
-
 }

@@ -10,7 +10,6 @@
 #include "Project3MatchGameModeBase.generated.h"
 
 #define ATB_UFUNCTION           UFUNCTION(BlueprintCallable, Category = Game)
-#define ATB_BP_IMPLEMENT        UFUNCTION(BlueprintImplementableEvent, Category = Game)
 #define ATB_BP_PURE             UFUNCTION(BlueprintPure, Category = Game)
 #define UPROPERTY_BP_READ_ONLY  UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Game)
 /**
@@ -51,11 +50,11 @@ public:
 	ATB_BP_PURE
 		int32 GetMaxComboPower();
 
-	ATB_BP_IMPLEMENT
+	UFUNCTION(BlueprintImplementableEvent, Category = Game)
 		void AwardPlace(int32 NewPlace, int32 PointsGiven);
-	ATB_BP_IMPLEMENT
+	UFUNCTION(BlueprintImplementableEvent, Category = Game)
 		void AwardBonus();
-	ATB_BP_IMPLEMENT
+	UFUNCTION(BlueprintImplementableEvent, Category = Game)
 		void GameWasWon(bool bGameWasWon);
 
 	/// <Summary>

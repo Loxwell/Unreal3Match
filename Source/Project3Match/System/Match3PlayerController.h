@@ -17,4 +17,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = Game)
 		int32 CalculateBombPower();
 	virtual int32 CalculateBombPower_Implementation();
+
+	int32 GetMaxComboPower() const { return 0; }
+	int32 GetComboPower() const { return 0; }
+	void SetComboPower(const int32& NewComboPower) {}
 };
