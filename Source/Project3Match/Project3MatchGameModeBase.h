@@ -58,7 +58,11 @@ public:
 		void GameWasWon(bool bGameWasWon);
 
 	/// <Summary>
-	/// 이득우 C++ 책을 다시 한번 볼 것
+	/// BlueprintNativeEvent == BlueprintImplementableEvent + BlueprintCallable 의 조합과 유사한 개념
+	/// int32 CalculateBombPower()는 블루 프린트에서 재정의해서 사용함
+	/// 블루 프린트에서 int32 CalculateBombPower() 재정의 없이 호출 될 경우 함수 바디를 정의 하지 않았기 때문에
+	/// 대신 호출 될 함수로 CalculateBombPower_Implementation를 선언 및 정의 해야함
+	/// 명식적으로 선언및 정의 되지 않을 경우 UHT에 의해 생성 된다(확인 바람)
 	/// </Summary>
 	UFUNCTION(BlueprintNativeEvent, Category = Game)
 		int32 CalculateBombPower();

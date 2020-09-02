@@ -8,8 +8,6 @@
 #include "../MISC/LevelSaveData.h"
 #include "GlobalGameInstance.generated.h"
 
-#define ATB_UFUNCTION UFUNCTION(BlueprintCallable, Category = "Saved Game")
-
 /**
  * 
  */
@@ -27,15 +25,13 @@ public:
 	// 프로그램이 종료 될 때 호출
 	virtual void Shutdown() override;
 
-	ATB_UFUNCTION
+	UFUNCTION(BlueprintCallable, Category = "Saved Game")
 		void SaveGame();
-	ATB_UFUNCTION
+	UFUNCTION(BlueprintCallable, Category = "Saved Game")
 		bool LoadCustomInt(const FString& FieldName, int32& Value);
-	ATB_UFUNCTION
+	UFUNCTION(BlueprintCallable, Category = "Saved Game")
 		void SaveCustomInt(const FString& FieldName, const int32& Value);
-	ATB_UFUNCTION
-		void SaveCustomInt(const FString& FieldName, const int32&& Value);
-	ATB_UFUNCTION
+	UFUNCTION(BlueprintCallable, Category = "Saved Game")
 		void ClearCustomInt(const FString& FieldName);
 
 	UFUNCTION(BlueprintCallable, Category = Online)
@@ -45,7 +41,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void UpdateUIAfterSave();
 	UFUNCTION(BlueprintImplementableEvent, Category = Online)
-		void OnLoginChanged(bool bLoggingIn, const int32& UserID, const int32& UserIndex);
+		void OnLoginChanged(bool bLoggingIn, int32 UserID, int32 UserIndex);
 	UFUNCTION(BlueprintImplementableEvent, Category = Online)
 		void OnEnteringForeground();
 	UFUNCTION(BlueprintImplementableEvent, Category = Online)
@@ -57,19 +53,19 @@ public:
 #pragma endregion
 
 	void OnUnexpectedPurchase_Internal(const FUniqueNetId& UserId);
-	void OnViewportResize_Internal(FViewport* const Viewport, const uint32& ID);
+	void OnViewportResize_Internal(FViewport* Viewport, uint32 ID);
 
 	void InitSaveGameSlot();
 	
-	bool FindSaveDataForLevel(UObject* WorldContextObject, FLevelSaveData& SaveGameData);
+	bool FindSaveDataForLevel(UObject* WorldContextObject, FLevelSaveData& OutSaveData);
 
 	void SetCameraResize(const FVector2D& NewViewport) { StoredCameraViewport = NewViewport; }
 	void UpdateSave(UObject* WorldContextObject, FLevelSaveData& NewData);
 	
 protected:
 	FString GetSaveSlotName() const;
-	FString SaveGamePrefix();
-	FString DefaultSaveGameSlot();
+	FString SaveGamePrefix;
+	FString DefaultSaveGameSlot;
 
 protected:
 	// 상속 받은 클래스에서 정의 할 것
@@ -78,10 +74,13 @@ protected:
 	FVector2D StoredCameraViewport;
 
 private:
-	/*UPROPERTY()
-		class UMatch3SaveGame* InstanceGameData;*/
+	/// <summary>
+	/// UGameplayStatics를 통해 Serialize를 하기 위한 USaveGame 객체
+	/// </summary>
+	UPROPERTY()
+		class UMatch3SaveGame* InstanceGameData;
 	FDelegateHandle LoginChangedHandle;
-	FDelegateHandle EnteringForgroundHandle;
+	FDelegateHandle EnteringForegroundHandle;
 	FDelegateHandle EnteringBakcgroundHandle;
 	FDelegateHandle ViewportHandle;
 	FDelegateHandle UnexpectedPurchaseHandle;

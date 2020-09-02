@@ -22,6 +22,8 @@ public:
 	bool LoadCustomInt(const FString& FieldName, int32& Value) const;
 	void SaveCustomInt(const FString& FieldName, const int32& Value);
 	void ClearCustomInt(const FString& FieldName);
+	FLevelSaveData* Find(const FString& FieldName) { return SaveData.Find(FieldName); }
+	/*FLevelSaveData* Find(const FString&& FieldName) { return SaveData.Find(FieldName); }*/
 
 protected:
 	UPROPERTY()
