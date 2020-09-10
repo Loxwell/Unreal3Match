@@ -9,15 +9,15 @@ public class Project3Match : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Paper2D", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Paper2D", "UMG"});
         
         // Uncomment if you are using Slate UI
         PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
         PrivateDependencyModuleNames.AddRange(new string[] { "OnlineSubsystem", "OnlineSubsystemUtils" });
         //PrivateIncludePathModuleNames.AddRange(new string[] {  });
-
+        DynamicallyLoadedModuleNames.Add("OnlineSubsystemNull");
         // Uncomment if you are using online features
-        PrivateDependencyModuleNames.Add("OnlineSubsystem");
+        //PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
         // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
         if (Target.Platform == UnrealTargetPlatform.IOS)

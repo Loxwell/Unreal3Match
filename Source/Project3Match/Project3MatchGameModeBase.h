@@ -76,6 +76,7 @@ public:
 
 #pragma region Getter/Setter
 	inline float GetTileMoveSpeed() const { return TileMoveSpeed; }
+	inline void SetTileMoveSpeed(float NewMoveSpeed) { TileMoveSpeed = NewMoveSpeed; }
 	ATB_UFUNCTION
 		inline int32 GetFinalPlace()const { return FinalPlace; }
 	inline void SetFinalPlace(int32 NewFinalPlace) { FinalPlace = NewFinalPlace; }

@@ -7,7 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "System/Match3PlayerController.h"
-#include "UObjects/GlobalGameInstance.h"
+#include "System/GlobalGameInstance.h"
 #include "MISC/Match3BPFunctionLibrary.h"
 
 using A3GameMode = AProject3MatchGameModeBase;
