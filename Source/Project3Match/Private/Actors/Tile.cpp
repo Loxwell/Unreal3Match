@@ -77,7 +77,7 @@ void ATile::StartFalling(bool bUseCurrentWorldLocation)
 	GetWorldTimerManager().SetTimer(TickFallingHandle, this, &ATile::TickFalling, 0.001f, true);
 	check(Grid);
 
-	if (!bUseCurrentWorldLocation)
+	if (!bUseCurrentWorldLocation) // 현재 위치 기준 로컬 기준 이동 거리 계산
 	{
 		// 아래로 이동 할 Grid Index의 Offset
 		// X 좌표도 추후 수정 할 것
@@ -96,16 +96,17 @@ void ATile::StartFalling(bool bUseCurrentWorldLocation)
 			{
 				if (ATile* TileBelow = Grid->GetTileFromGridAddress(LandingGridAddress))
 				{
-					switch (TileBelow->TileState)
+					if (TileBelow->TileState == ETileState::ETS_FALLING)
 					{
-					case ETileState::ETS_FALLING:
 						// This space contains a falling tile, so continue to fall through it, 
 						// but note that the tile will land underneath us, so we need to leave a gap for it.
 						// 현재 타일의 아래 타일은 떨어지는 상태
 						// 같이 떨어지기 때문에 아래의 타일과 간격을 유지해야함
 						++HeightAboveBottom;
 						continue;
-					case ETileState::ETS_PENDING_DELETE:
+					}
+					else if (TileBelow->TileState == ETileState::ETS_PENDING_DELETE)
+					{
 						// This space contains a tile that is about to be deleted.
 						// We can fall through this space freely.
 						continue;
@@ -127,7 +128,7 @@ void ATile::StartFalling(bool bUseCurrentWorldLocation)
 		FallingEndLocation = FallingStartLocation;
 		FallingEndLocation.Z -= FallDistance;
 	}
-	else
+	else // World 좌표
 	{
 		LandingGridAddress = GetGridAddress();
 		FallingEndLocation = Grid->GetLocationFromGridAddress(LandingGridAddress);
@@ -149,7 +150,7 @@ void ATile::TickFalling()
 {
 	if (AMatch3GameMode* CurrentGameMoe = Cast<AMatch3GameMode>(UGameplayStatics::GetGameMode(this)))
 	{
-		check(Grid);
+		check(Grid)
 		check(TotalFallingTime > 0);
 		// 이동 시간 정규화 
 		float FallCompleteFraction = (GetWorld()->GetTimeSeconds() - FallingStartTime) / TotalFallingTime;

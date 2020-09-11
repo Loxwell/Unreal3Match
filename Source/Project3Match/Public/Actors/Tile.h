@@ -105,16 +105,16 @@ protected:
 		class AGrid* Grid;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, Meta = (BlueprintProtected = true))
 		USoundWave* MatchSound;
-
-	FTimerHandle TickFallingHandle;
+	/// <summary>
+	/// 이동 목표 지점
+	/// </summary>
+	UPROPERTY(VisibleInstanceOnly, SimpleDisplay, Category = Tile)
+		FVector FallingEndLocation;
 	/// <summary>
 	/// 이동 시작 지점
 	/// </summary>
 	FVector FallingStartLocation;
-	/// <summary>
-	/// 이동 목표 지점
-	/// </summary>
-	FVector FallingEndLocation;
+	FTimerHandle TickFallingHandle;
 	/// <summary>
 	/// 1D Key/Value로써 Grid상에 타일이 떨어질 Gird Address, 허공에서 바닥으로 떨어질 때 사용
 	/// </summary>

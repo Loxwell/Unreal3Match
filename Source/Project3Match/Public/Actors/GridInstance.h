@@ -21,6 +21,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 		bool PlayMoveEffect(float AdjustedTileSpeed);
 	virtual int32 GetScoreMultiplierForMove(ETileMoveType::Type LastMoveType) override;
+	virtual void OnMoveMade_Implementation(ETileMoveType::Type MoveType) override;
 
 private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Meta = (AllowPrivateAccess = true))

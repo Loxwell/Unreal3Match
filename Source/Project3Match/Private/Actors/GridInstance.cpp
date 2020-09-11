@@ -45,7 +45,7 @@ void AGridInstance::ToggleAllBombs()
 	{
 		for (TArray<ATile*>::ElementType Tile : GameTiles)
 		{
-			if (Tile->GetBPReference())
+			if (::IsValid(Tile) && Tile->GetBPReference())
 				Tile->ProcessEvent(Tile->GetBPReference()->FindFunction(FName("ToggleBombFlashing")), nullptr);
 		}
 	}
@@ -58,4 +58,25 @@ bool AGridInstance::PlayMoveEffect(float AdjustedTileSpeed)
 	GameMode->SetTileMoveSpeed(FMath::Clamp(AdjustedTileSpeed, 0.f, BaseSpeed * MaxComboEffect));
 
 	return FMath::Clamp(AdjustedTileSpeed, 0.f, BaseSpeed * MaxComboEffect) >= BaseSpeed * MaxComboEffect;
+}
+
+void AGridInstance::OnMoveMade_Implementation(ETileMoveType::Type MoveType)
+{
+	using namespace ETileMoveType;
+	switch (MoveType)
+	{
+	case MT_BOMB:
+	case MT_ALL_THE_BOMBS:
+	case MT_FAILURE:
+	case MT_STANDARD:
+	case MT_MORE_TILES:
+		ComboCounter = 1;
+		PlayMoveEffect(BaseSpeed);
+		break;
+	case MT_COMBO:
+		ComboCounter *= 1.5f;
+		PlayMoveEffect(BaseSpeed);
+		ToggleAllBombs();
+		break;
+	}
 }

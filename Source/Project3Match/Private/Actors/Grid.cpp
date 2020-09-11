@@ -234,14 +234,19 @@ void AGrid::OnTileFinishedFalling(ATile* Tile, int32 LandingGridAddress)
 }
 
 /// <summary>
-/// 
+/// 연달아 일정 개수 이상의 일치하는 타일 삭제 및 재생성
 /// </summary>
 /// <param name="InTile"></param>
 void AGrid::OnTileFinishedMatching(ATile* InTile)
 {
+	if (FallingTiles.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileFinishedMatching FallingTiles(%d)"), FallingTiles.Num());
+	}
+
 	if (InTile)
 	{
-		//  ATile::OnMatched_Implementation함수 안에서 AGrid::OnTileFinishedMatching을 호출 함
+		// ATile::OnMatched_Implementation함수에서 호출 함
 		// OnTileFinishedMatching함수를 호출 한 InTile 객체를 목록에서 제거
 		TilesBeingDestroyed.RemoveSwap(InTile);
 		// OnTileFinishedMatching()함수를 호출 한 타일객체를 삭제
@@ -250,17 +255,22 @@ void AGrid::OnTileFinishedMatching(ATile* InTile)
 
 	if (TilesBeingDestroyed.Num() == 0)
 	{
+		// Make all tiles fall if they are above empty space.
 		for (ATile* Tile : FallingTiles)
 			Tile->StartFalling();
 
-		if (FallingTiles.Num() == 0)
+		if (FallingTiles.Num() == 0) 
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileFinishedMatching FallingTiles(0)"));
 			RespawnTiles();
+		}
 	}
 }
 
 void AGrid::RespawnTiles()
 {
-	return;
+	UE_LOG(LogTemp, Warning, TEXT("call AGrid::RespawnTiles()"));
+
 
 	for (int32 x = 0; x < GridWidth; ++x)
 	{
@@ -294,47 +304,49 @@ void AGrid::RespawnTiles()
 		}
 		else
 			check(false);
+	}
 
-		if (FallingTiles.Num() > 0)
-		{
-			/// <summary>
-			/// Any falling tiles that exist at this point are new ones, 
-			/// and are falling from physical locations (off-grid) to their correct locations.
-			/// </summary>
-			for (ATile* Tile : FallingTiles)
-				Tile->StartFalling();
-			return;
-		}
-
-		TArray<ATile*> AllMatchingTiles;
-		for (ATile* Tile : TilesToCheck)
-		{
-			TArray<ATile*> MatchingTiles = FindNeighbors(Tile);
-			for (ATile* MatchingTile : MatchingTiles)
-				AllMatchingTiles.AddUnique(MatchingTile);
-		}
-
+	if (FallingTiles.Num() > 0)
+	{
 		/// <summary>
-		/// 타일이 일치한 줄이 있다면
+		/// Any falling tiles that exist at this point are new ones, 
+		/// and are falling from physical locations (off-grid) to their correct locations.
 		/// </summary>
-		if (AllMatchingTiles.Num() > 0)
+		for (ATile* Tile : FallingTiles)
+			Tile->StartFalling(true);
+
+		UE_LOG(LogTemp, Warning, TEXT("AGrid::RespawnTiles() : FallingTiles %d"), FallingTiles.Num());
+		return;
+	}
+
+	TArray<ATile*> AllMatchingTiles;
+	for (ATile* Tile : TilesToCheck)
+	{
+		TArray<ATile*> MatchingTiles = FindNeighbors(Tile);
+		for (ATile* MatchingTile : MatchingTiles)
+			AllMatchingTiles.AddUnique(MatchingTile);
+	}
+
+	/// <summary>
+	/// 타일이 일치한 줄이 있다면
+	/// </summary>
+	if (AllMatchingTiles.Num() > 0)
+	{
+		SetLastMove(ETileMoveType::MT_COMBO);
+		ExecuteMatch(AllMatchingTiles);
+	}
+	else
+	{
+		if (IsUnwinnable())
 		{
-			SetLastMove(ETileMoveType::MT_COMBO);
-			ExecuteMatch(AllMatchingTiles);
-		}
-		else
-		{
-			if (IsUnwinnable())
+			if (A3MatchGameMode* GameMode = Cast<A3MatchGameMode>(UGameplayStatics::GetGameMode(this)))
 			{
-				if (A3MatchGameMode* GameMode = Cast<A3MatchGameMode>(UGameplayStatics::GetGameMode(this)))
-				{
-					// 추후 타일 재설정으로 변경 할 것
-					GameMode->GameOver();
-					return;
-				}
+				// 추후 타일 재설정으로 변경 할 것
+				GameMode->GameOver();
+				return;
 			}
-			UMatch3BPFunctionLibrary::PauseGameTimer(this, false);
 		}
+		UMatch3BPFunctionLibrary::PauseGameTimer(this, false);
 	}
 }
 
@@ -516,6 +528,8 @@ void AGrid::ExecuteMatch(const TArray<ATile*>& MatchingTiles)
 	// 이동 할 타일 수와 일치 되서 삭제 될 타일 수를 기반으로 
 	// 보드를 다시 채울 타일 수 확인 단계 (삭제 된 타일 수 만 재 생성)
 	TilesToCheck.Reset(FallingTiles.Num() + MatchingTiles.Num());
+	
+	UE_LOG(LogTemp, Warning, TEXT("AGrid::ExecuteMatch FallingTiles(%d)"), FallingTiles.Num());
 
 	{
 		if (AProject3MatchGameModeBase* GameMode = Cast<AProject3MatchGameModeBase>(UGameplayStatics::GetGameMode(this)))
@@ -581,7 +595,6 @@ void AGrid::OnSwapDisplayFinished(ATile* Tile)
 void AGrid::OnTileWasSelected(ATile* NewSelectedTile)
 {
 	bool bGameActive = UMatch3BPFunctionLibrary::IsGameActive(this);
-	UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileWasSelected : %d"), bGameActive ? 1 : 0);
 
 	// 현재 이동 중인 타일, 일치한 타일이 있을 경우, 현재 GamePlay 상태가 정지 상태, 선택 한 타일이 Null 인 경우
 	if (bPendingSwapMove || FallingTiles.Num() || TilesBeingDestroyed.Num() ||

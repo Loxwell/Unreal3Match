@@ -67,8 +67,9 @@ public:
 		void InitGrid();
 
 	/**블루 프린트 용 순수 가상 함수*/
-	UFUNCTION(BlueprintImplementableEvent, meta = (ExpandEnumAsExecs = "MoveType"), Category = Tile)
+	UFUNCTION(BlueprintNativeEvent, meta = (ExpandEnumAsExecs = "MoveType"), Category = Tile)
 		void OnMoveMade(ETileMoveType::Type MoveType);
+	virtual void OnMoveMade_Implementation(ETileMoveType::Type MoveType) {}
 
 	UFUNCTION(BlueprintCallable, Category = Audio)
 		void ReturnMatchSound(TArray<class USoundWave*>& MatchSounds);
