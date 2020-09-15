@@ -42,6 +42,9 @@ public:
 		FDelegateNoneParam GameStarted;
 
 private:
+	UPROPERTY()
+		TSubclassOf<class UUserWidget> UIClass;
+	class UUserWidget* MainUI;
 	HelperClasses::FDoOnceFlag DoOnce;
 	FText TimeAsText;
 	FTimerHandle GameTimeHandler;

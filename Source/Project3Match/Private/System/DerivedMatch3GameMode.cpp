@@ -1,11 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+#include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetTree.h"
 
-
-#include "System/DerivedMatch3GameMode.h"
 #include "Kismet/GameplayStatics.h"
-#include "Actors/U3MatchCamera.h"
-#include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetSystemLibrary.h"
+
+#include "Math/UnrealMathUtility.h"
+
+#include "Actors/U3MatchCamera.h"
+#include "System/DerivedMatch3GameMode.h"
+#include "MISC/Match3BPFunctionLibrary.h"
 
 void ADerivedMatch3GameMode::BeginPlay()
 {
@@ -22,12 +26,32 @@ void ADerivedMatch3GameMode::BeginPlay()
 	
 	UpdateTimeDisplay.Broadcast();
 	GetWorld()->GetTimerManager().SetTimer(GameTimeHandler, this, &ADerivedMatch3GameMode::GameTimer, 1.0f, true);
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI(TEXT("WidgetBlueprint'/Game/Blueprints/Test/BP_UITest.BP_UITest_C'"));
+
+	if (UI.Succeeded())
+		UIClass = UI.Class;
+	
+	check(UIClass);
 }
 
 void ADerivedMatch3GameMode::BeginDestroy()
 {
 	Super::BeginDestroy();
 	UpdateTimeDisplay.Clear();
+
+	if (UIClass)
+	{
+		MainUI = CreateWidget(UMatch3BPFunctionLibrary::GetLocalPlayerController(this), UIClass, TEXT("SCREEN_UI"));
+		MainUI->AddToViewport();
+		UUserWidget* GameScreen = Cast<UUserWidget>( MainUI->WidgetTree->FindWidget(FName("BP_GameScreen")) );
+
+		if (GameScreen)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Find BP_GameScreen"));
+		}else
+			UE_LOG(LogTemp, Warning, TEXT("Not found BP_GameScreen"));
+	}
 }
 
 void ADerivedMatch3GameMode::GameTimer()
