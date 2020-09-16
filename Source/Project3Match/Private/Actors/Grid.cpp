@@ -239,10 +239,10 @@ void AGrid::OnTileFinishedFalling(ATile* Tile, int32 LandingGridAddress)
 /// <param name="InTile"></param>
 void AGrid::OnTileFinishedMatching(ATile* InTile)
 {
-	if (FallingTiles.Num() == 0)
+	/*if (FallingTiles.Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileFinishedMatching FallingTiles(%d)"), FallingTiles.Num());
-	}
+	}*/
 
 	if (InTile)
 	{
@@ -261,7 +261,7 @@ void AGrid::OnTileFinishedMatching(ATile* InTile)
 
 		if (FallingTiles.Num() == 0) 
 		{
-			UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileFinishedMatching FallingTiles(0)"));
+			//UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileFinishedMatching FallingTiles(0)"));
 			RespawnTiles();
 		}
 	}
@@ -269,9 +269,6 @@ void AGrid::OnTileFinishedMatching(ATile* InTile)
 
 void AGrid::RespawnTiles()
 {
-	UE_LOG(LogTemp, Warning, TEXT("call AGrid::RespawnTiles()"));
-
-
 	for (int32 x = 0; x < GridWidth; ++x)
 	{
 		int32 BaseAddress = 0, TestAddress = 0;
@@ -315,7 +312,6 @@ void AGrid::RespawnTiles()
 		for (ATile* Tile : FallingTiles)
 			Tile->StartFalling(true);
 
-		UE_LOG(LogTemp, Warning, TEXT("AGrid::RespawnTiles() : FallingTiles %d"), FallingTiles.Num());
 		return;
 	}
 
@@ -528,8 +524,6 @@ void AGrid::ExecuteMatch(const TArray<ATile*>& MatchingTiles)
 	// 이동 할 타일 수와 일치 되서 삭제 될 타일 수를 기반으로 
 	// 보드를 다시 채울 타일 수 확인 단계 (삭제 된 타일 수 만 재 생성)
 	TilesToCheck.Reset(FallingTiles.Num() + MatchingTiles.Num());
-	
-	UE_LOG(LogTemp, Warning, TEXT("AGrid::ExecuteMatch FallingTiles(%d)"), FallingTiles.Num());
 
 	{
 		if (AProject3MatchGameModeBase* GameMode = Cast<AProject3MatchGameModeBase>(UGameplayStatics::GetGameMode(this)))

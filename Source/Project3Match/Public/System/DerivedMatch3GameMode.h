@@ -17,9 +17,11 @@ class PROJECT3MATCH_API ADerivedMatch3GameMode : public AProject3MatchGameModeBa
 	GENERATED_BODY()
 	
 public:
+	ADerivedMatch3GameMode(const FObjectInitializer& ObjectInitializer);
 	virtual void BeginPlay() override;
 	virtual void BeginDestroy() override;
-
+	virtual void Tick(float DeltaSeconds) override;
+	
 private:
 	UFUNCTION()
 		void GameTimer();
@@ -44,8 +46,14 @@ public:
 private:
 	UPROPERTY()
 		TSubclassOf<class UUserWidget> UIClass;
-	class UUserWidget* MainUI;
+	UPROPERTY()
+		class UUserWidget* MainUI;
+	UPROPERTY()
+		class UTextBlock* TextScore;
+
 	HelperClasses::FDoOnceFlag DoOnce;
 	FText TimeAsText;
 	FTimerHandle GameTimeHandler;
+
+	float ElapsedTime;
 };
