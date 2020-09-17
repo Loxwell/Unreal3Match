@@ -69,7 +69,7 @@ void ADerivedMatch3GameMode::Tick(float DeltaSeconds)
 {
 	ElapsedTime += DeltaSeconds;
 	FNumberFormattingOptions Option;
-	Option.SetAlwaysSign(true).SetUseGrouping(true).SetMinimumIntegralDigits(1).SetMinimumFractionalDigits(1).SetMaximumFractionalDigits(1);
+	Option.SetAlwaysSign(false).SetUseGrouping(true).SetMinimumIntegralDigits(1).SetMinimumFractionalDigits(1).SetMaximumFractionalDigits(1);
 	
 	TextScore->SetText(FText::AsNumber(ElapsedTime, &Option));
 }
