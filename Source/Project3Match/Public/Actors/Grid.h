@@ -13,6 +13,9 @@
 
 class ATile;
 
+DECLARE_DELEGATE_OneParam(FDelegateOnMatched, FVector);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDynamicDelegateOnMatched, FVector, AtLocation);
+
 UCLASS()
 class PROJECT3MATCH_API AGrid : public AActor
 {
@@ -42,6 +45,9 @@ public:
 	/** Grid ¿­*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tile)
 		int32 GridHeight;
+
+	UPROPERTY(BlueprintAssignable, Category = "Game|Delegate")
+		FDynamicDelegateOnMatched MessageOnMatched;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Tile)

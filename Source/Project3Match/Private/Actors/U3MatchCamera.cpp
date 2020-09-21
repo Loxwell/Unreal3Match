@@ -6,8 +6,9 @@
 #include "Math/UnrealMathUtility.h"
 #include "System/GlobalGameInstance.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "PaperSpriteActor.h"
 
-#include "../../../../../../Engine/Plugins/2D/Paper2D/Source/Paper2D/Classes/PaperSpriteActor.h"
+//#include "../../../../../../Engine/Plugins/2D/Paper2D/Source/Paper2D/Classes/PaperSpriteActor.h"
 
 AU3MatchCamera::AU3MatchCamera():Super(FObjectInitializer()),
 DefaultFit(FVector2D(640, 1136)), DesiredSize(256)

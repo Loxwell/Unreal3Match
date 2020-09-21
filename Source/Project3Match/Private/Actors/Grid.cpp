@@ -264,6 +264,9 @@ void AGrid::OnTileFinishedMatching(ATile* InTile)
 			//UE_LOG(LogTemp, Warning, TEXT("AGrid::OnTileFinishedMatching FallingTiles(0)"));
 			RespawnTiles();
 		}
+
+		if(MessageOnMatched.IsBound())
+			MessageOnMatched.Broadcast(this->GetActorLocation());
 	}
 }
 
