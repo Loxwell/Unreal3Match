@@ -600,6 +600,10 @@ void AGrid::OnTileWasSelected(ATile* NewSelectedTile)
 
 	FTileType& NewSelectedTileType = TileLibrary[NewSelectedTile->GetTileTypeID()];
 
+	// 동일 타일을 선택 한 경우
+	if (CurrentlySelectedTile && NewSelectedTile->GetGridAddress() == CurrentlySelectedTile->GetGridAddress())
+		CurrentlySelectedTile = nullptr;
+
 	if (CurrentlySelectedTile)
 	{
 		// 이미 선택 된 타일과 현재 선택한 타일이 서로 이웃 인지 확인
@@ -664,6 +668,8 @@ void AGrid::OnTileWasSelected(ATile* NewSelectedTile)
 		{
 			CurrentlySelectedTile = NewSelectedTile;
 			CurrentlySelectedTile->PlaySelectionEffect(true);
+			if (CurrentlySelectedTile->MessageOnTouch.IsBound())
+				CurrentlySelectedTile->MessageOnTouch.Broadcast(CurrentlySelectedTile);
 		}
 		else
 			OnMoveMade(ETileMoveType::MT_FAILURE);

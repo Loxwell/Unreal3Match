@@ -9,10 +9,56 @@
 
 #define SPECIAL_TYPE "Special Game Events"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateOnTouch, class ATile*, Tile);
+
 UCLASS()
 class PROJECT3MATCH_API ATile : public APaperSpriteActor
 {
 	GENERATED_BODY()
+
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+		FTileAbilities Abilities;
+	UPROPERTY(BlueprintAssignable, Category = "Game|Delegate")
+		FDelegateOnTouch MessageOnTouch;
+
+protected:
+	/// <summary>
+	/// 타일을 소유 한 Grid Frame, 동적 생성 시 BeginPlay()에서 Outer 객체의 참조를 AGrid 형변환 후 할당
+	/// </summary>
+	UPROPERTY(BlueprintReadOnly, Category = Tile)
+		class AGrid* Grid;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, Meta = (BlueprintProtected = true))
+		USoundWave* MatchSound;
+	/// <summary>
+	/// 이동 목표 지점
+	/// </summary>
+	UPROPERTY(VisibleInstanceOnly, SimpleDisplay, Category = Tile)
+		FVector FallingEndLocation;
+	/// <summary>
+	/// 이동 시작 지점
+	/// </summary>
+	FVector FallingStartLocation;
+	FTimerHandle TickFallingHandle;
+	/// <summary>
+	/// 1D Key/Value로써 Grid상에 타일이 떨어질 Gird Address, 허공에서 바닥으로 떨어질 때 사용
+	/// </summary>
+	int32 LandingGridAddress;
+
+	float TotalFallingTime;
+	float FallingStartTime;
+
+private:
+	UPROPERTY(BlueprintReadOnly, Meta = (AllowPrivateAccess = true))
+		int32 TileTypeID;
+	/// <summary>
+	/// 1D Key/Value, 이웃 타일 검색 할 때 사용
+	/// </summary>
+	UPROPERTY(BlueprintReadOnly, Meta = (AllowPrivateAccess = true))
+		int32 GridAddress;
+	UPROPERTY()
+		TEnumAsByte<ETileState::Type> TileState;
 
 public:
 	ATile();
@@ -93,44 +139,4 @@ public:
 	inline void SetTileState(const TEnumAsByte<ETileState::Type>& NewState) { TileState = NewState; }
 #pragma endregion
 
-public:
-	UPROPERTY(BlueprintReadOnly)
-		FTileAbilities Abilities;
-
-protected:
-	/// <summary>
-	/// 타일을 소유 한 Grid Frame, 동적 생성 시 BeginPlay()에서 Outer 객체의 참조를 AGrid 형변환 후 할당
-	/// </summary>
-	UPROPERTY(BlueprintReadOnly, Category = Tile)
-		class AGrid* Grid;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Audio, Meta = (BlueprintProtected = true))
-		USoundWave* MatchSound;
-	/// <summary>
-	/// 이동 목표 지점
-	/// </summary>
-	UPROPERTY(VisibleInstanceOnly, SimpleDisplay, Category = Tile)
-		FVector FallingEndLocation;
-	/// <summary>
-	/// 이동 시작 지점
-	/// </summary>
-	FVector FallingStartLocation;
-	FTimerHandle TickFallingHandle;
-	/// <summary>
-	/// 1D Key/Value로써 Grid상에 타일이 떨어질 Gird Address, 허공에서 바닥으로 떨어질 때 사용
-	/// </summary>
-	int32 LandingGridAddress;
-
-	float TotalFallingTime;
-	float FallingStartTime;
-
-private:
-	UPROPERTY(BlueprintReadOnly, Meta = (AllowPrivateAccess = true))
-		int32 TileTypeID;
-	/// <summary>
-	/// 1D Key/Value, 이웃 타일 검색 할 때 사용
-	/// </summary>
-	UPROPERTY(BlueprintReadOnly, Meta = (AllowPrivateAccess = true))
-		int32 GridAddress;
-	UPROPERTY()
-		TEnumAsByte<ETileState::Type> TileState;
 };
